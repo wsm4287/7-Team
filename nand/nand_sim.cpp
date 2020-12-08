@@ -1,4 +1,4 @@
-#include <iostream>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include "nand.h"
@@ -35,7 +35,7 @@ u32 *DATA(u32 i, u32 j, u32 k) {
 int main(int argc, char *argv[])
 {
 	int i;
-	
+
 	Nand nand;
 
 	nand.Nand_Init(N_BANKS, N_BLOCKS, N_PAGES);
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 
 	// invalid page number
 	nand.Nand_Write(0, 4, -1, DATA(0, 4, -1), SPARE(0, 4, -1));
-	nand.Nand_Read(0, 4, -1, DATA(0, 0, 0), &spare);
+	nand.Nand_Write(0, 4, -1, DATA(0, 0, 0), &spare);
 
 	// invalid block number
 	nand.Nand_Write(0, -1, 0, DATA(0, -1, 0), SPARE(0, -1, 0));
