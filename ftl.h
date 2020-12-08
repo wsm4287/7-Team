@@ -1,21 +1,6 @@
-//----------------------------------------------------------
-//
-// Lab #4 : Page Mapping FTL Simulator
-// 	- Embedded System Design, ICE3028 (Fall, 2019)
-//
-// Oct. 10, 2019.
-//
-// Junho Lee, Somm Kim
-// Dongkun Shin (dongkun@skku.edu)
-// Embedded Systems Laboratory
-// Sungkyunkwan University
-// http://nyx.skku.ac.kr
-//
-//---------------------------------------------------------
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <fcntl.h>
 #include <assert.h>
 #include "nand.h"
@@ -59,12 +44,18 @@
 #define HOT_LPN 				((N_LPNS * HOT_LPN_RATIO) / 100)
 #define COLD_LPN				((N_LPNS * COLD_LPN_RATIO) / 100)
 
-struct ftl_stat {
-	int gc;
-	long host_write;
-	long gc_write;
+struct Ftl_Stat {
+    int gc;
+    long host_write;
+    long gc_write;
 } s;
 
-void ftl_open();
-void ftl_write(u32 lpn, u32 *write_buffer);
-void ftl_read(u32 lpn, u32 *read_buffer);
+class Ftl// : public Nand
+{
+    public:
+        Ftl();
+        ~Ftl();
+        void Ftl_Open();
+        void Ftl_Write(u32 lpn, u32 *write_buffer);
+        void Ftl_Read(u32 lpn, u32 *read_buffer);
+};
