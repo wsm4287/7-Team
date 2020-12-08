@@ -1,7 +1,7 @@
 PREFIX	=
 CXX		= $(PREFIX)g++
 
-CFLAGS	= -g -O2 -Wall -std=c99
+CFLAGS	= -g -O2 -Wall
 LIBS	= 
 RM		= rm
 

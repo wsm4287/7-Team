@@ -14,6 +14,5 @@ class Nand{
 		int Nand_Write(int bank, int blk, int page, u32 *data, u32 spare);
 		int Nand_Erase(int bank, int blk);
 		int Nand_Blkdump(int bank, int blk);
-
-
 };
+

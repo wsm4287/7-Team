@@ -1,5 +1,9 @@
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <fcntl.h>
 #include "ftl.h"
-#include "nand.h"
+//#include "nand.h"
 
 using namespace std;
 
@@ -119,7 +123,7 @@ void Ftl::Ftl_Write(u32 lpn, u32 *write_buffer)
 	return;
 }
 
-void Garbage_Collection(u32 bank)
+void Ftl::Garbage_Collection(u32 bank)
 {
 	s.gc++;
 

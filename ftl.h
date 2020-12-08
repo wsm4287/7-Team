@@ -1,8 +1,3 @@
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <fcntl.h>
-#include <assert.h>
 #include "nand.h"
 
 #define N_BANKS						2
@@ -44,18 +39,21 @@
 #define HOT_LPN 				((N_LPNS * HOT_LPN_RATIO) / 100)
 #define COLD_LPN				((N_LPNS * COLD_LPN_RATIO) / 100)
 
-struct Ftl_Stat {
-    int gc;
-    long host_write;
-    long gc_write;
-} s;
+
 
 class Ftl// : public Nand
 {
     public:
+	struct Ftl_Stat {
+	    int gc;
+	    long host_write;
+	    long gc_write;
+	}s;
         Ftl();
         ~Ftl();
         void Ftl_Open();
         void Ftl_Write(u32 lpn, u32 *write_buffer);
         void Ftl_Read(u32 lpn, u32 *read_buffer);
+	void Garbage_Collection(u32 bank);
+	static long now();
 };

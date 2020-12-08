@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include "nand.h"
+//#include "nand.h"
 #include "ftl.h"
 #include <cstdio>
 
@@ -128,7 +128,7 @@ int Nand::Nand_Read(int bank, int blk, int page, u32 *data, u32 *spare)
 	// returns -1 on errors with printing appropriate error message
 
 	int fd_bank, r;
-	int  read_buf[100];
+	//int  read_buf[100];
 	char bank_num[100];
 	off_t cur;
 
