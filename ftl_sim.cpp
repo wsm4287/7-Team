@@ -3,6 +3,7 @@
 #include <cstring>
 #include <fcntl.h>
 #include <assert.h>
+#include <time.h>
 #include "ftl.h"
 
 Ftl ftl;
@@ -11,7 +12,7 @@ void Sim_Init(void)
 	ftl.s.gc = 0;
 	ftl.s.host_write = 0;
 	ftl.s.gc_write = 0;
-	srand(0);
+	srand(time(NULL));
 }
 
 void Show_Info(void)
@@ -65,7 +66,6 @@ u32 Get_Lpn()
 #else
 	lpn = rand() % N_LPNS;
 #endif
-
 	return lpn;
 }
 

@@ -3,17 +3,14 @@
 #include <cstring>
 #include <fcntl.h>
 #include "ftl.h"
-//#include "nand.h"
 
 using namespace std;
 
 #ifdef COST_BENEFIT
-static long now() {
+static long Ftl::now() {
 	return s.host_write + s.gc_write;
 }
 #endif
-
-void Garbage_Collection(u32 bank);
 
 int* l2ptable;
 int* free_check;
@@ -48,7 +45,7 @@ void Ftl::Ftl_Open()
 		free_check[i] = BLKS_PER_BANK + 1;
 		
 	age_check = (long*)malloc(sizeof(long)*N_BLOCKS);
-	for(i=0;i<N_BLOCKS;i++);
+	for(i=0;i<N_BLOCKS;i++)
 		age_check[i] = 0;
 
 	p_ptr = (int*)malloc(sizeof(int)*N_BANKS);

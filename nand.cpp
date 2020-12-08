@@ -5,7 +5,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-//#include "nand.h"
 #include "ftl.h"
 #include <cstdio>
 
@@ -28,7 +27,7 @@ int Nand::Nand_Init(int nbanks, int nblks, int npages)
 	// returns -1 on errors with printing appropriate error message
 
 	int i_bank, i_blk, i_page;
-	int fd_bank, cur;
+	int fd_bank;
 	char bank_num[100];
 	
 	if(nbanks>0 && nblks>0 && npages>0){
@@ -37,7 +36,7 @@ int Nand::Nand_Init(int nbanks, int nblks, int npages)
 			fd_bank = open(bank_num,O_CREAT|O_RDWR|O_TRUNC, 00777);
 			for(i_blk=0;i_blk<BLKS_PER_BANK;i_blk++){
 				for(i_page=0;i_page<PAGES_PER_BLK;i_page++){
-					cur = lseek(fd_bank,36*PAGES_PER_BLK*i_blk+36*i_page,SEEK_SET);
+					lseek(fd_bank,36*PAGES_PER_BLK*i_blk+36*i_page,SEEK_SET);
 					write(fd_bank,"abcd",SPARE_SIZE);
 				}
 			}
@@ -60,7 +59,6 @@ int Nand::Nand_Write(int bank, int blk, int page, u32 *data, u32 spare)
 	int fd_bank, r;
 	int  read_buf[100];
 	char bank_num[100];
-	off_t cur;
 
 	sprintf(bank_num, "./BANK_%d", bank);
 	fd_bank = open(bank_num, O_RDWR, 00777);
@@ -76,14 +74,14 @@ int Nand::Nand_Write(int bank, int blk, int page, u32 *data, u32 spare)
 		return -1;}
 	else{
 	if(page==0){                           
-		cur=lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*page, SEEK_SET);
+		lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*page, SEEK_SET);
 		r = read(fd_bank, read_buf, sizeof(read_buf));
 		if(read_buf[0]==read_buf[1]){
 			printf("write(%d,%d,%d): failed, the page was already written\n", bank, blk, page);				close(fd_bank);
 			return -1;  
 		}
 		else{
-			cur=lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*page, SEEK_SET);
+			lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*page, SEEK_SET);
 			write(fd_bank, data, DATA_SIZE);
 			write(fd_bank, &spare, SPARE_SIZE); //erase
 			/*if(*data==0){
@@ -98,10 +96,10 @@ int Nand::Nand_Write(int bank, int blk, int page, u32 *data, u32 spare)
 		}
 	}		
  	else{
-		cur=lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*(page-1), SEEK_SET);
+		lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*(page-1), SEEK_SET);
 		r = read(fd_bank, read_buf, sizeof(read_buf));
 		if(read_buf[0]==read_buf[1]){
-			cur = lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*page, SEEK_SET);
+			lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*page, SEEK_SET);
 			write(fd_bank, data, DATA_SIZE);
 			write(fd_bank, &spare, SPARE_SIZE);
 			/*if(*data==0)
@@ -130,7 +128,6 @@ int Nand::Nand_Read(int bank, int blk, int page, u32 *data, u32 *spare)
 	int fd_bank, r;
 	//int  read_buf[100];
 	char bank_num[100];
-	off_t cur;
 
 	sprintf(bank_num, "./BANK_%d", bank);
 	fd_bank = open(bank_num, O_RDONLY, 00777);
@@ -148,7 +145,7 @@ int Nand::Nand_Read(int bank, int blk, int page, u32 *data, u32 *spare)
 		close(fd_bank);
 		return -1;
 	}else{
-		cur = lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*page, SEEK_SET);
+		lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*page, SEEK_SET);
 		r = read(fd_bank, data, DATA_SIZE);
 		r = read(fd_bank, spare, SPARE_SIZE);
 		if(*data==0x64636261){
@@ -179,13 +176,12 @@ int Nand::Nand_Erase(int bank, int blk)
 	int fd_bank, r, i, j;
 	int  read_buf[100];
 	char bank_num[100];
-	off_t cur;
 
 	sprintf(bank_num, "./BANK_%d", bank);
 	fd_bank = open(bank_num, O_RDWR, 00777);
 	j = 0;
 	for(i=0;i<PAGES_PER_BLK;i++){
-		cur = lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*i, SEEK_SET);
+		lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*i, SEEK_SET);
 		r = read(fd_bank, read_buf, sizeof(read_buf));
 		if(read_buf[0]==0x64636261) j++;
 	}
@@ -195,7 +191,7 @@ int Nand::Nand_Erase(int bank, int blk)
 		return -1;
 	}else{
 		for(i=0;i<PAGES_PER_BLK;i++){
-			cur = lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*i, SEEK_SET);
+			lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*i, SEEK_SET);
 			write(fd_bank,"abcd",SPARE_SIZE);
 		}
 		//printf("erase(%d,%d): block erased\n", bank, blk);
@@ -215,12 +211,11 @@ int Nand::Nand_Blkdump(int bank, int blk)
 	int fd_bank, r, i, j;
 	int  read_buf[100];
 	char bank_num[100];
-	off_t cur;
 
 	sprintf(bank_num, "./BANK_%d", bank);
 	fd_bank = open(bank_num, O_RDONLY, 00777);
 	for(i=0;i<PAGES_PER_BLK;i++){
-		cur = lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*i, SEEK_SET);
+		lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*i, SEEK_SET);
 		r = read(fd_bank, read_buf, DATA_SIZE);
 		if(read_buf[0]==0x64636261){
 			 break;
@@ -234,7 +229,7 @@ int Nand::Nand_Blkdump(int bank, int blk)
 		printf("blkdump(%d,%d): Total %d page(s) written\n",bank, blk,i);
 	}
 	for(j=0;j<i;j++){
-		cur = lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*j, SEEK_SET);
+		lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*j, SEEK_SET);
 		r = read(fd_bank, read_buf, sizeof(read_buf));
 		printf("blkdump(%d,%d,%d): data = %#x, spare = %#010x\n", bank, blk, j, read_buf[0], read_buf[8]);
 	}
