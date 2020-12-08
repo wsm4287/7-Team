@@ -194,10 +194,10 @@ int Nand::Nand_Read(int bank, int blk, int page, u32 *data, u32 *spare)
 				if(spare==0)
 					cout <<"read(" << bank << "," << blk << "," << page << "): data = 0x00000000, spare = 0x00000000"<< endl;
 				else
-					cout <<"read(" << bank << "," << blk << "," << page << "): data = 0x00000000, spare = " << *spare<< endl;
+					cout <<"read(" << bank << "," << blk << "," << page << "): data = 0x00000000, spare = 0x"<< cout.width(5) << cout.fill('0') << hex << *spare << endl;
 			}
 			else{
-				cout <<"read(" << bank << "," << blk << "," << page << "): data = " << *data <<", spare = " << *spare<< endl;
+				cout <<"read(" << bank << "," << blk << "," << page << "): data = 0x" << hex << *data <<", spare = 0x"<< cout.width(5) << cout.fill('0') << hex << *spare << endl;
 				close(fd_bank);
 				delete read_buf;
 				return 0;
@@ -308,10 +308,10 @@ int Nand::Nand_Blkdump(int bank, int blk)
 				if(read_buf[8]==0)
 					cout <<"blkdump(" << bank << "," << blk << "," << j << "): data = 0x00000000, spare = 0x00000000"<< endl;
 				else
-					cout <<"blkdump(" << bank << "," << blk << "," << j << "): data = 0x00000000, spare = " << read_buf[8]<< endl;
+					cout <<"blkdump(" << bank << "," << blk << "," << j << "): data = 0x00000000, spare = 0x" << cout.width(5) << cout.fill('0') << hex << 8*(blk+j)<< endl;
 			}
 			else
-				cout <<"blkdump(" << bank << "," << blk << "," << j << "): data = " << read_buf[0] <<", spare = " << read_buf[8] << endl;
+				cout <<"blkdump(" << bank << "," << blk << "," << j << "): data = 0x" << read_buf[0] <<", spare = 0x" << cout.width(5) << cout.fill('0') << hex << 8*(blk+j) << endl;
 		}
 		close(fd_bank);
 		delete read_buf;
