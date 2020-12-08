@@ -18,4 +18,4 @@ all: $(OBJS)
 
 
 clean:
-	$(RM) -f $(TARGET) $(OBJS) bank* *~
+	$(RM) -f $(TARGET) $(OBJS) BANK* *~

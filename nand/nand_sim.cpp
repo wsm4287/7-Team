@@ -17,7 +17,7 @@ u32 *DATA(u32 i, u32 j, u32 k) {
 	else if (idx % 0xF == 0x2) memset(data, 0x22, DATA_SIZE); 
 	else if (idx % 0xF == 0x3) memset(data, 0x33, DATA_SIZE); 
 	else if (idx % 0xF == 0x4) memset(data, 0x44, DATA_SIZE); 
- 	else if (idx % 0xF == 0x5) memset(data, 0x55, DATA_SIZE); 
+	else if (idx % 0xF == 0x5) memset(data, 0x55, DATA_SIZE); 
 	else if (idx % 0xF == 0x6) memset(data, 0x66, DATA_SIZE); 
 	else if (idx % 0xF == 0x7) memset(data, 0x77, DATA_SIZE); 
 	else if (idx % 0xF == 0x8) memset(data, 0x88, DATA_SIZE); 
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 
 	// invalid page number
 	nand.Nand_Write(0, 4, -1, DATA(0, 4, -1), SPARE(0, 4, -1));
-	nand.Nand_Write(0, 4, -1, DATA(0, 0, 0), &spare);
+	nand.Nand_Read(0, 4, -1, DATA(0, 0, 0), &spare);
 
 	// invalid block number
 	nand.Nand_Write(0, -1, 0, DATA(0, -1, 0), SPARE(0, -1, 0));
