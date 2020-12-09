@@ -54,7 +54,6 @@ class Ftl:public Nand
     public:
 		Ftl();
 		~Ftl();
-		void Ftl_Open();
 		void Ftl_Write(u32 lpn, u32 *write_buffer);
 		void Ftl_Read(u32 lpn, u32 *read_buffer);
 		void Garbage_Collection(u32 bank);

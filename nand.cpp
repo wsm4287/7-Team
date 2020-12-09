@@ -9,16 +9,10 @@
 
 using namespace std;
 
-//Nand::Nand(){
-//
-//}
-
 Nand::~Nand(){
 
 }
 
-//int Nand::Nand_Init()
-//{
 Nand::Nand(){
 	int nbanks = N_BANKS, nblks = BLKS_PER_BANK, npages = PAGES_PER_BLK;
 	// initialize the NAND flash memory 
@@ -46,12 +40,10 @@ Nand::Nand(){
 			}
 			close(fd_bank);
 		}
-		cout <<"init: " << nbanks <<" banks, " << nblks <<" blocks, " << npages << " pages per block"<<endl;
-		//return 0;
+		//cout <<"init: " << nbanks <<" banks, " << nblks <<" blocks, " << npages << " pages per block"<<endl;
         }	
 	else{ 
 		cout<<"number of bank, block, page should be bigger than 0" << endl; 
-		//return -1;
 	}
 }
 

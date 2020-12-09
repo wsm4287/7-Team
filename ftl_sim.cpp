@@ -122,7 +122,6 @@ void Show_Stat(void)
 
 int main(void)
 {
-	ftl.Ftl_Open();
 	ftl.Sim_Init();
 	Show_Info();
 	Sim();
