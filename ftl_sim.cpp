@@ -7,13 +7,6 @@
 #include "ftl.h"
 
 Ftl ftl;
-/*void Sim_Init(void)
-{
-	ftl.s.gc = 0;
-	ftl.s.host_write = 0;
-	ftl.s.gc_write = 0;
-	srand(time(NULL));
-}*/
 
 void Show_Info(void)
 {

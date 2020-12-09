@@ -22,9 +22,8 @@ int* gc_check;
 int gc_blk;
 int* free_blk;
 
-//Nand nand;
-
-Ftl::Ftl(){
+Ftl::Ftl()// : Nand()
+{
 
 }
 
@@ -35,8 +34,10 @@ Ftl::~Ftl(){
 void Ftl::Ftl_Open()
 {
 	int i;
-	Nand_Init(N_BANKS, BLKS_PER_BANK, PAGES_PER_BLK);
-	
+	//Nand();
+	//Nand_Init();
+	//Nand_Init(N_BANKS, BLKS_PER_BANK, PAGES_PER_BLK);
+
 	l2ptable = (int*)malloc(sizeof(int)*N_LPNS);
 	for(i=0;i<N_LPNS;i++)
 		l2ptable[i] = N_PPNS;

@@ -11,13 +11,12 @@ class Nand{
 	public:
 		Nand();
 		~Nand();
-		int Nand_Init(int nbanks, int nblks, int npages);
+		int Nand_Init();
+		//int Nand_Init(int nbanks, int nblks, int npages);
 		int Nand_Read(int bank, int blk, int page, u32 *data, u32 *spare);
 		int Nand_Write(int bank, int blk, int page, u32 *data, u32 spare);
 		int Nand_Erase(int bank, int blk);
 		int Nand_Blkdump(int bank, int blk);
 
-
 };
-
 
