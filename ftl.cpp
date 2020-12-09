@@ -68,9 +68,10 @@ void Ftl::Ftl_Open()
 	return;
 }
 
-void Ftl::Ftl_Read(u32 lpn, u32 *read_buffer)
+//void Ftl::Ftl_Read(u32 lpn, u32 *read_buffer)
+void Ftl::Ftl_Read(u32 lba, u32 num_sectors, u32 *read_buffer)
 {	
-	u32 bank, blk, p_page, ppn;
+	/*u32 bank, blk, p_page, ppn;
 	u32 spare;
 	
 	ppn = l2ptable[lpn];
@@ -79,46 +80,112 @@ void Ftl::Ftl_Read(u32 lpn, u32 *read_buffer)
 	p_page = (ppn % N_PPNS_PB) % PAGES_PER_BLK;
 
 	Nand_Read(bank, blk, p_page, read_buffer, &spare);	
+	return;*/
+
+	int bank, blk, p_page, i;
+	int lpn, sect_offset, remain_sects, num_sectors_to_read, buf_cnt;
+	u32 temp_page[SECTORS_PER_PAGE], spare;
+	
+	lpn = lba / SECTORS_PER_PAGE;
+	sect_offset = lba % SECTORS_PER_PAGE;
+	remain_sects = num_sectors;
+	buf_cnt = 0;
+	
+	while(remain_sects != 0){
+		if((sect_offset + remain_sects) < SECTORS_PER_PAGE)
+            		num_sectors_to_read = remain_sects;
+        	else
+            		num_sectors_to_read = SECTORS_PER_PAGE - sect_offset;
+
+		bank = lpn % N_BANKS;
+		blk = (l2ptable[lpn] % N_PPNS_PB) / PAGES_PER_BLK;
+		p_page = (l2ptable[lpn] % N_PPNS_PB) % PAGES_PER_BLK;
+
+		Nand_Read(bank, blk, p_page, temp_page, &spare);
+
+		for(i=0;i<SECTORS_PER_PAGE;i++){
+			if(i>=sect_offset && i < sect_offset+num_sectors_to_read){
+				read_buffer[buf_cnt] = temp_page[i];
+				buf_cnt++;
+			}
+		}
+		sect_offset = 0;
+       		remain_sects -= num_sectors_to_read;
+        	lpn++;
+	}
 	return;
 }
 
-void Ftl::Ftl_Write(u32 lpn, u32 *write_buffer)
+void Ftl::Ftl_Write(u32 lba, u32 num_sectors, u32 *write_buffer)
 {	
-	int bank, blk, p_page;
+	int bank, lpn, i, sect_offset, remain_sects, buf_cnt, num_sectors_to_write;
+	u32 temp_page[SECTORS_PER_PAGE], r_buf[SECTORS_PER_PAGE], spare;
 
-	bank = lpn % N_BANKS;
+	lpn = lba / SECTORS_PER_PAGE;
+    	sect_offset = lba % SECTORS_PER_PAGE;
+    	remain_sects = num_sectors;
+	buf_cnt = 0;
 
-        if(p_ptr[bank] % PAGES_PER_BLK == 0)
-		free_check[bank]--;
-        
-	if(free_check[bank] == N_GC_BLOCKS){
-		gc_blk = p_ptr[bank] / PAGES_PER_BLK;
-		Garbage_Collection(bank);
-	}	
+ 	while(remain_sects != 0){
+        	if((sect_offset + remain_sects) < SECTORS_PER_PAGE)
+            		num_sectors_to_write = remain_sects;
+        	else
+            		num_sectors_to_write = SECTORS_PER_PAGE - sect_offset;
 
-	if(l2ptable[lpn]==N_PPNS){
-		u32 spare = lpn;
-		Nand_Write(bank, p_ptr[bank] / PAGES_PER_BLK, p_ptr[bank] % PAGES_PER_BLK, write_buffer, spare); 
-		valid_check[N_PPNS_PB*bank+p_ptr[bank]] = 1;
-		l2ptable[lpn] = N_PPNS_PB*bank+p_ptr[bank];
-		if(gc_check[bank] == 1 && (p_ptr[bank] % PAGES_PER_BLK == PAGES_PER_BLK - 1)){
-			p_ptr[bank] = free_blk[bank]*PAGES_PER_BLK;
-			gc_check[bank] = 0;
-		}else	p_ptr[bank]++;
-	}else{
-		valid_check[l2ptable[lpn]] = 0;
-/*		#ifdef COST_BENEFIT
-		age_check[BLKS_PER_BANK*bank+(l2ptable[lpn]%N_PPNS_PB) / PAGES_PER_BLK] = now();
-		#endif*/
-		u32 spare = lpn;
-		Nand_Write(bank, p_ptr[bank] / PAGES_PER_BLK, p_ptr[bank] % PAGES_PER_BLK, write_buffer, spare);
-		valid_check[N_PPNS_PB*bank+p_ptr[bank]] = 1;
-		l2ptable[lpn] = N_PPNS_PB*bank+p_ptr[bank];
-		if(gc_check[bank] == 1 && (p_ptr[bank] % PAGES_PER_BLK == PAGES_PER_BLK - 1)){
-			p_ptr[bank] = free_blk[bank]*PAGES_PER_BLK;
-			gc_check[bank] = 0;
-		}else	p_ptr[bank]++; 
-	}
+		bank = lpn % N_BANKS;
+		
+		if(p_ptr[bank] % PAGES_PER_BLK == 0)
+			free_check[bank]--;
+			
+		if(free_check[bank] == N_GC_BLOCKS){
+			gc_blk = p_ptr[bank] / PAGES_PER_BLK;
+			Garbage_Collection(bank);
+		}
+
+		if(l2ptable[lpn]==N_PPNS){
+			for(i=0;i<SECTORS_PER_PAGE;i++){
+				if(i<sect_offset || i>=sect_offset+num_sectors_to_write)
+					temp_page[i] = 0xFFFFFFFF;
+				else{
+					temp_page[i] = write_buffer[buf_cnt];
+					buf_cnt++;
+				}
+			}
+			Nand_Write(bank, p_ptr[bank]/PAGES_PER_BLK, p_ptr[bank]%PAGES_PER_BLK, temp_page, lpn);
+			s.ftl_write += SECTORS_PER_PAGE;
+			valid_check[N_PPNS_PB*bank+p_ptr[bank]] = 1;
+			l2ptable[lpn] = N_PPNS_PB*bank+p_ptr[bank];
+			if(gc_check[bank] == 1 && (p_ptr[bank] % PAGES_PER_BLK == PAGES_PER_BLK - 1)){
+				p_ptr[bank] = free_blk[bank]*PAGES_PER_BLK;
+				gc_check[bank] = 0;
+			}else	p_ptr[bank]++;
+		}else{
+			Nand_Read(bank, (l2ptable[lpn]%N_PPNS_PB)/PAGES_PER_BLK, (l2ptable[lpn]%N_PPNS_PB)%PAGES_PER_BLK, r_buf, &spare); 
+			for(i=0;i<SECTORS_PER_PAGE;i++){
+				if(i<sect_offset || i>=sect_offset+num_sectors_to_write)
+					temp_page[i] = r_buf[i];
+				else{
+					temp_page[i] = write_buffer[buf_cnt];
+					buf_cnt++;
+				}
+			}
+			valid_check[l2ptable[lpn]] = 0;
+			//#ifdef COST_BENEFIT
+			//age_check[BLKS_PER_BANK*bank+(l2ptable[lpn]%N_PPNS_PB)/PAGES_PER_BLK] = now();
+			//#endif
+			Nand_Write(bank, p_ptr[bank]/PAGES_PER_BLK, p_ptr[bank]%PAGES_PER_BLK, temp_page, lpn);
+			s.ftl_write += SECTORS_PER_PAGE;
+			valid_check[N_PPNS_PB*bank+p_ptr[bank]] = 1;
+			l2ptable[lpn] = N_PPNS_PB*bank+p_ptr[bank];
+			if(gc_check[bank] == 1 && (p_ptr[bank] % PAGES_PER_BLK == PAGES_PER_BLK - 1)){
+				p_ptr[bank] = free_blk[bank]*PAGES_PER_BLK;
+				gc_check[bank] = 0;
+			}else	p_ptr[bank]++; 
+		}
+	        sect_offset = 0;
+       		remain_sects -= num_sectors_to_write;
+        	lpn++;
+    	}	
 	return;
 }
 
@@ -164,7 +231,7 @@ void Ftl::Garbage_Collection(u32 bank)
 				l2ptable[spare] = N_PPNS_PB*bank + free_blk[bank]*PAGES_PER_BLK + cnt;
 				valid_check[N_PPNS_PB*bank+victim_blk*PAGES_PER_BLK+i] = 0;
 				valid_check[N_PPNS_PB*bank + free_blk[bank]*PAGES_PER_BLK + cnt] = 1;
-				s.gc_write++;
+				s.gc_write += SECTORS_PER_PAGE;
 				p_ptr[bank]++;
 				cnt++;	
 			}
@@ -262,6 +329,12 @@ long Ftl::Get_host_write(){
 }
 void Ftl::Input_host_write(long temp_host_write){
 	s.host_write = temp_host_write;
+}
+long Ftl::Get_ftl_write(){//
+	return s.ftl_write;
+}
+void Ftl::Input_ftl_write(long temp_ftl_write){//
+	s.ftl_write = temp_ftl_write;
 }
 long Ftl::Get_gc_write(){
 	return s.gc_write;

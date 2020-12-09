@@ -25,8 +25,8 @@ typedef unsigned int 		u32;
 #define HOT_RATIO				90
 #define COLD_RATIO				(100 - HOT_RATIO)
 
-#define HOT_LPN_RATIO 			(100 - HOT_RATIO)
-#define COLD_LPN_RATIO			(100 - HOT_LPN_RATIO)
+#define HOT_LBA_RATIO 			(100 - HOT_RATIO)
+#define COLD_LBA_RATIO			(100 - HOT_LBA_RATIO)
 
 //#define HOT_LPN 				((N_LPNS * HOT_LPN_RATIO) / 100)
 //#define COLD_LPN				((N_LPNS * COLD_LPN_RATIO) / 100)
@@ -43,9 +43,12 @@ class Nand{
 		int N_USER_BLOCKS;
 		int N_OP_BLOCKS;
 		int N_LPNS;
+		int N_LBAS;//
 		long MAX_ITERATION;
-		int HOT_LPN;
-		int COLD_LPN;
+		//int HOT_LPN;
+		//int COLD_LPN;
+		int HOT_LBA;//
+		int COLD_LBA;//
 
 	public:
 		Nand();
@@ -62,9 +65,12 @@ class Nand{
 		int Get_N_USER_BLOCKS();
 		int Get_N_OP_BLOCKS();
 		int Get_N_LPNS();
+		int Get_N_LBAS();//
 		long Get_MAX_ITERATION();
-		int Get_HOT_LPN();
-		int Get_COLD_LPN();
+		//int Get_HOT_LPN();
+		//int Get_COLD_LPN();
+		int Get_HOT_LBA();//
+		int Get_COLD_LBA();//
 		void Set_Variable();
 
 };
