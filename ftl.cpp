@@ -1,4 +1,4 @@
-#include <cstdio>
+#include <iostream>
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
@@ -7,11 +7,12 @@
 
 using namespace std;
 
-#ifdef COST_BENEFIT
+/*#ifdef COST_BENEFIT
 static long Ftl::now() {
 	return s.host_write + s.gc_write;
 }
 #endif
+*/
 
 int* l2ptable;
 int* free_check;
@@ -106,9 +107,9 @@ void Ftl::Ftl_Write(u32 lpn, u32 *write_buffer)
 		}else	p_ptr[bank]++;
 	}else{
 		valid_check[l2ptable[lpn]] = 0;
-		#ifdef COST_BENEFIT
+/*		#ifdef COST_BENEFIT
 		age_check[BLKS_PER_BANK*bank+(l2ptable[lpn]%N_PPNS_PB) / PAGES_PER_BLK] = now();
-		#endif
+		#endif*/
 		u32 spare = lpn;
 		Nand_Write(bank, p_ptr[bank] / PAGES_PER_BLK, p_ptr[bank] % PAGES_PER_BLK, write_buffer, spare);
 		valid_check[N_PPNS_PB*bank+p_ptr[bank]] = 1;
@@ -125,55 +126,56 @@ void Ftl::Garbage_Collection(u32 bank)
 {
 	s.gc++;
 
-#ifndef COST_BENEFIT
+//#ifndef COST_BENEFIT
 	// Greedy policy
-	int cnt_valid_page[BLKS_PER_BANK];
-	int i, j, victim_blk, cnt, min;
+	if(gp == GREEDY){
+		int cnt_valid_page[BLKS_PER_BANK];
+		int i, j, victim_blk, cnt, min;
 
-	u32 read_buffer[SECTORS_PER_PAGE];
-	u32 spare;
+		u32 read_buffer[SECTORS_PER_PAGE];
+		u32 spare;
 
-	cnt = 0;
-	for(j=0;j<BLKS_PER_BANK;j++){
-		if(j == gc_blk){
-			cnt_valid_page[j] = PAGES_PER_BLK;
-			continue;
-		}
-		for(i=0;i<PAGES_PER_BLK;i++){
-			if(valid_check[N_PPNS_PB*bank+j*PAGES_PER_BLK+i] == 1)
-				cnt++;
-		}
-		cnt_valid_page[j] = cnt;
 		cnt = 0;
-	}
-	min = cnt_valid_page[0];
-	victim_blk = 0;
-	for(i=1;i<BLKS_PER_BANK;i++){
-		if(cnt_valid_page[i]<min){
-			min = cnt_valid_page[i];
-			victim_blk = i;
+		for(j=0;j<BLKS_PER_BANK;j++){
+			if(j == gc_blk){
+				cnt_valid_page[j] = PAGES_PER_BLK;
+				continue;
+			}
+			for(i=0;i<PAGES_PER_BLK;i++){
+				if(valid_check[N_PPNS_PB*bank+j*PAGES_PER_BLK+i] == 1)
+					cnt++;
+			}
+			cnt_valid_page[j] = cnt;
+			cnt = 0;
 		}
-	}
-	cnt = 0;
-	for(i=0;i<PAGES_PER_BLK;i++){
-		if(valid_check[N_PPNS_PB*bank+victim_blk*PAGES_PER_BLK+i] == 1){
-			Nand_Read(bank, victim_blk, i, read_buffer, &spare);
-			Nand_Write(bank, free_blk[bank], cnt, read_buffer, spare);
-			l2ptable[spare] = N_PPNS_PB*bank + free_blk[bank]*PAGES_PER_BLK + cnt;
-			valid_check[N_PPNS_PB*bank+victim_blk*PAGES_PER_BLK+i] = 0;
-			valid_check[N_PPNS_PB*bank + free_blk[bank]*PAGES_PER_BLK + cnt] = 1;
-			s.gc_write++;
-			p_ptr[bank]++;
-			cnt++;	
+		min = cnt_valid_page[0];
+		victim_blk = 0;
+		for(i=1;i<BLKS_PER_BANK;i++){
+			if(cnt_valid_page[i]<min){
+				min = cnt_valid_page[i];
+				victim_blk = i;
+			}
 		}
+		cnt = 0;
+		for(i=0;i<PAGES_PER_BLK;i++){
+			if(valid_check[N_PPNS_PB*bank+victim_blk*PAGES_PER_BLK+i] == 1){
+				Nand_Read(bank, victim_blk, i, read_buffer, &spare);
+				Nand_Write(bank, free_blk[bank], cnt, read_buffer, spare);
+				l2ptable[spare] = N_PPNS_PB*bank + free_blk[bank]*PAGES_PER_BLK + cnt;
+				valid_check[N_PPNS_PB*bank+victim_blk*PAGES_PER_BLK+i] = 0;
+				valid_check[N_PPNS_PB*bank + free_blk[bank]*PAGES_PER_BLK + cnt] = 1;
+				s.gc_write++;
+				p_ptr[bank]++;
+				cnt++;	
+			}
+		}
+		Nand_Erase(bank, victim_blk);
+		free_blk[bank] = victim_blk;
+		gc_check[bank] = 1;
+		free_check[bank]++;
 	}
-	Nand_Erase(bank, victim_blk);
-	free_blk[bank] = victim_blk;
-	gc_check[bank] = 1;
-	free_check[bank]++;
-	
 
-#else
+/*#else
 	// Cost-Benefit policy
 	int cnt_valid_page[BLKS_PER_BANK];
 	int i, j, victim_blk, cnt;
@@ -237,7 +239,7 @@ void Ftl::Garbage_Collection(u32 bank)
 	free_check[bank]++;
 
 #endif
-
+*/
 	return;
 }
 
@@ -266,5 +268,28 @@ long Ftl::Get_gc_write(){
 }
 void Ftl::Input_gc_write(long temp_gc_write){
 	s.gc_write = temp_gc_write;
+}
+void Ftl::Set_Policy(char* policy1, char* policy2){
+	if(strcmp(policy1, "g") ==0) gp = GREEDY;
+	else if(strcmp(policy1, "l") ==0) gp = LRU;
+	else{
+		cout << "Wrong Policy!" << endl;
+		exit(1);
+	}
+	if(strcmp(policy2, "r") == 0 ) sp = RANDOM;
+	else if(strcmp(policy2, "h") == 0) sp = HOTCOLD;
+	else{
+		cout << "Wrong Policy!" << endl;
+		exit(1);
+	}
+
+}
+int Ftl::Check_Gp(){
+	if(gp == GREEDY) return 1;
+	else return 0;
+}
+int Ftl::Check_Sp(){
+	if(sp == RANDOM) return 1;
+	else return 0;
 }
 

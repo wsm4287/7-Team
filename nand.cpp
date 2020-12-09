@@ -17,6 +17,49 @@ Nand::~Nand(){
 
 }
 
+void Nand::Input_N_BANKS(int nbanks){
+	N_BANKS = nbanks;
+}
+
+int Nand::Get_N_BANKS(){
+	return N_BANKS;
+}
+int Nand::Get_N_PPNS(){
+	return N_PPNS;
+}
+int Nand::Get_N_BLOCKS(){
+	return N_BLOCKS;
+}
+int Nand::Get_N_USER_BLOCKS(){
+	return N_USER_BLOCKS;
+}
+int Nand::Get_N_OP_BLOCKS(){
+	return N_OP_BLOCKS;
+}
+int Nand::Get_N_LPNS(){
+	return N_LPNS;
+}
+long Nand::Get_MAX_ITERATION(){
+	return MAX_ITERATION;
+}
+int Nand::Get_HOT_LPN(){
+	return HOT_LPN;
+}
+int Nand::Get_COLD_LPN(){
+	return COLD_LPN;
+}
+
+void Nand::Set_Variable(){
+	N_PPNS = N_PPNS_PB * N_BANKS;
+	N_BLOCKS = BLKS_PER_BANK * N_BANKS;
+	N_USER_BLOCKS = N_USER_BLOCKS_PB * N_BANKS;
+	N_OP_BLOCKS = N_OP_BLOCKS_PB * N_BANKS;
+	N_LPNS = N_LPNS_PB * N_BANKS;
+	MAX_ITERATION = N_LPNS * N_RUNS;
+	HOT_LPN = (N_LPNS * HOT_LPN_RATIO) / 100;
+	COLD_LPN = (N_LPNS * COLD_LPN_RATIO) / 100;
+}
+
 int Nand::Nand_Init(int nbanks, int nblks, int npages)
 {
 	// initialize the NAND flash memory 
