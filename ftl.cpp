@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
+#include <time.h>
 #include "ftl.h"
 
 using namespace std;
@@ -239,3 +240,31 @@ void Ftl::Garbage_Collection(u32 bank)
 
 	return;
 }
+
+void Ftl::Sim_Init(){
+	s.gc = 0;
+	s.host_write = 0;
+	s.gc_write = 0;
+	srand(time(NULL));
+}
+
+int Ftl::Get_gc(){
+	return s.gc;
+}
+void Ftl::Input_gc(int temp_gc){
+	s.gc = temp_gc;
+
+}
+long Ftl::Get_host_write(){
+	return s.host_write;
+}
+void Ftl::Input_host_write(long temp_host_write){
+	s.host_write = temp_host_write;
+}
+long Ftl::Get_gc_write(){
+	return s.gc_write;
+}
+void Ftl::Input_gc_write(long temp_gc_write){
+	s.gc_write = temp_gc_write;
+}
+

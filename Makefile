@@ -1,5 +1,5 @@
 PREFIX	=
-XX		= $(PREFIX)g++
+CXX		= $(PREFIX)g++
 
 CFLAGS	= -g -O2 -Wall
 LIBS	= 
