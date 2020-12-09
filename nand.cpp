@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include "nand.h"
+#include "ftl.h"
 
 using namespace std;
 
@@ -108,7 +108,7 @@ int Nand::Nand_Write(int bank, int blk, int page, u32 *data, u32 spare)
 				cur=lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*page, SEEK_SET);
 				write(fd_bank, data, DATA_SIZE);
 				write(fd_bank, &spare, SPARE_SIZE); //erase
-				if(*data==0){
+				/*if(*data==0){
 					if(spare==0)
 						cout <<"write(" << bank << "," << blk << "," << page << "): data = 0x00000000, spare = 0x00000000"<< endl;
 					else
@@ -116,7 +116,7 @@ int Nand::Nand_Write(int bank, int blk, int page, u32 *data, u32 spare)
 				}
 				else
 					cout <<"write(" << bank << "," << blk << "," << page << "): data = 0x" << hex << *data <<", spare = 0x"<< cout.width(5) << cout.fill('0') << hex <<  spare << endl;
-					close(fd_bank);
+					*/close(fd_bank);
 					delete read_buf;
 					return 0;
 			}
@@ -129,7 +129,7 @@ int Nand::Nand_Write(int bank, int blk, int page, u32 *data, u32 spare)
 				cur = lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*page, SEEK_SET);
 				write(fd_bank, data, DATA_SIZE);
 				write(fd_bank, &spare, SPARE_SIZE);
-				if(*data==0)
+				/*if(*data==0)
 					cout <<"write(" << bank << "," << blk << "," << page << "): data = 0x00000000, spare = 0x"<< cout.width(5) << cout.fill('0') << hex << spare << endl;
 				else
 					cout <<"write(" << bank << "," << blk << "," << page << "): data = 0x" << hex << *data <<", spare = 0x"<< cout.width(5) << cout.fill('0') << hex << spare << endl;
@@ -139,7 +139,7 @@ int Nand::Nand_Write(int bank, int blk, int page, u32 *data, u32 spare)
 			}
 			else{	
 				cout <<"write(" << bank << "," << blk << "," << page << "): failed, the page is not being sequentially written" << endl;
-				close(fd_bank);
+*/				close(fd_bank);
 				delete read_buf;
 				return -1;
 			}
@@ -190,18 +190,18 @@ int Nand::Nand_Read(int bank, int blk, int page, u32 *data, u32 *spare)
 			delete read_buf;
 			return -1;
 		}else{
-			if(*data==0){
+			/*if(*data==0){
 				if(spare==0)
 					cout <<"read(" << bank << "," << blk << "," << page << "): data = 0x00000000, spare = 0x00000000"<< endl;
 				else
 					cout <<"read(" << bank << "," << blk << "," << page << "): data = 0x00000000, spare = 0x"<< cout.width(5) << cout.fill('0') << hex << *spare << endl;
 			}
-			else{
+			else
 				cout <<"read(" << bank << "," << blk << "," << page << "): data = 0x" << hex << *data <<", spare = 0x"<< cout.width(5) << cout.fill('0') << hex << *spare << endl;
-				close(fd_bank);
+				*/close(fd_bank);
 				delete read_buf;
 				return 0;
-			}
+			
 		}
 	}
 }
@@ -249,7 +249,7 @@ int Nand::Nand_Erase(int bank, int blk)
 				cur = lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*i, SEEK_SET);
 				write(fd_bank,"abcd",SPARE_SIZE);
 			}
-			cout <<"erase(" << bank << "," << blk << "): block erased" << endl;
+			//cout <<"erase(" << bank << "," << blk << "): block erased" << endl;
 			close(fd_bank);
 			delete read_buf;
 			return 0;

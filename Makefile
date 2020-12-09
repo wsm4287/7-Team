@@ -1,21 +1,20 @@
 PREFIX	=
-CC		= $(PREFIX)g++
+XX		= $(PREFIX)g++
 
-CFLAGS	= -g -O2 -Wall -std=c99
+CFLAGS	= -g -O2 -Wall
 LIBS	= 
 RM		= rm
 
-TARGET	= nand_sim
-CSRCS	= nand_sim.cpp nand.cpp
-HEADERS	= nand.h
-OBJS	= $(CSRCS:.cpp=.o)
+TARGET	= ftl_sim
+CXXSRCS	= ftl_sim.cpp nand.cpp ftl.cpp
+HEADERS	= nand.h ftl.h
+OBJS	= $(CXXSRCS:.cpp=.o)
 
 all: $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LIBS) 
+	$(CXX) $(CFLAGS) -o $(TARGET) $(OBJS) $(LIBS) 
 
 .cpp.o: $(HEADERS)
-	$(CC) $(CFLAGS) -c $< -o $@
-
+	$(CXX) $(CFLAGS) -c $< -o $@
 
 clean:
 	$(RM) -f $(TARGET) $(OBJS) BANK* *~
