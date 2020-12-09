@@ -41,7 +41,7 @@
 
 
 
-class Ftl// : public Nand
+class Ftl:public Nand// : public Nand
 {
 	private:
 		struct Ftl_stat {

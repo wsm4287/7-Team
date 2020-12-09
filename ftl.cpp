@@ -22,7 +22,7 @@ int* gc_check;
 int gc_blk;
 int* free_blk;
 
-Nand nand;
+//Nand nand;
 
 Ftl::Ftl(){
 
@@ -35,7 +35,7 @@ Ftl::~Ftl(){
 void Ftl::Ftl_Open()
 {
 	int i;
-	nand.Nand_Init(N_BANKS, BLKS_PER_BANK, PAGES_PER_BLK);
+	Nand_Init(N_BANKS, BLKS_PER_BANK, PAGES_PER_BLK);
 	
 	l2ptable = (int*)malloc(sizeof(int)*N_LPNS);
 	for(i=0;i<N_LPNS;i++)
@@ -77,7 +77,7 @@ void Ftl::Ftl_Read(u32 lpn, u32 *read_buffer)
 	blk = (ppn % N_PPNS_PB) / PAGES_PER_BLK;
 	p_page = (ppn % N_PPNS_PB) % PAGES_PER_BLK;
 
-	nand.Nand_Read(bank, blk, p_page, read_buffer, &spare);	
+	Nand_Read(bank, blk, p_page, read_buffer, &spare);	
 	return;
 }
 
@@ -97,7 +97,7 @@ void Ftl::Ftl_Write(u32 lpn, u32 *write_buffer)
 
 	if(l2ptable[lpn]==N_PPNS){
 		u32 spare = lpn;
-		nand.Nand_Write(bank, p_ptr[bank] / PAGES_PER_BLK, p_ptr[bank] % PAGES_PER_BLK, write_buffer, spare); 
+		Nand_Write(bank, p_ptr[bank] / PAGES_PER_BLK, p_ptr[bank] % PAGES_PER_BLK, write_buffer, spare); 
 		valid_check[N_PPNS_PB*bank+p_ptr[bank]] = 1;
 		l2ptable[lpn] = N_PPNS_PB*bank+p_ptr[bank];
 		if(gc_check[bank] == 1 && (p_ptr[bank] % PAGES_PER_BLK == PAGES_PER_BLK - 1)){
@@ -110,7 +110,7 @@ void Ftl::Ftl_Write(u32 lpn, u32 *write_buffer)
 		age_check[BLKS_PER_BANK*bank+(l2ptable[lpn]%N_PPNS_PB) / PAGES_PER_BLK] = now();
 		#endif
 		u32 spare = lpn;
-		nand.Nand_Write(bank, p_ptr[bank] / PAGES_PER_BLK, p_ptr[bank] % PAGES_PER_BLK, write_buffer, spare);
+		Nand_Write(bank, p_ptr[bank] / PAGES_PER_BLK, p_ptr[bank] % PAGES_PER_BLK, write_buffer, spare);
 		valid_check[N_PPNS_PB*bank+p_ptr[bank]] = 1;
 		l2ptable[lpn] = N_PPNS_PB*bank+p_ptr[bank];
 		if(gc_check[bank] == 1 && (p_ptr[bank] % PAGES_PER_BLK == PAGES_PER_BLK - 1)){
@@ -157,8 +157,8 @@ void Ftl::Garbage_Collection(u32 bank)
 	cnt = 0;
 	for(i=0;i<PAGES_PER_BLK;i++){
 		if(valid_check[N_PPNS_PB*bank+victim_blk*PAGES_PER_BLK+i] == 1){
-			nand.Nand_Read(bank, victim_blk, i, read_buffer, &spare);
-			nand.Nand_Write(bank, free_blk[bank], cnt, read_buffer, spare);
+			Nand_Read(bank, victim_blk, i, read_buffer, &spare);
+			Nand_Write(bank, free_blk[bank], cnt, read_buffer, spare);
 			l2ptable[spare] = N_PPNS_PB*bank + free_blk[bank]*PAGES_PER_BLK + cnt;
 			valid_check[N_PPNS_PB*bank+victim_blk*PAGES_PER_BLK+i] = 0;
 			valid_check[N_PPNS_PB*bank + free_blk[bank]*PAGES_PER_BLK + cnt] = 1;
@@ -167,7 +167,7 @@ void Ftl::Garbage_Collection(u32 bank)
 			cnt++;	
 		}
 	}
-	nand.Nand_Erase(bank, victim_blk);
+	Nand_Erase(bank, victim_blk);
 	free_blk[bank] = victim_blk;
 	gc_check[bank] = 1;
 	free_check[bank]++;
@@ -220,8 +220,8 @@ void Ftl::Garbage_Collection(u32 bank)
 	cnt = 0;
 	for(i=0;i<PAGES_PER_BLK;i++){
 		if(valid_check[N_PPNS_PB*bank+victim_blk*PAGES_PER_BLK+i] == 1){
-			nand.Nand_Read(bank, victim_blk, i, read_buffer, &spare);
-			nand.Nand_Write(bank, free_blk[bank], cnt, read_buffer, spare);
+			Nand_Read(bank, victim_blk, i, read_buffer, &spare);
+			Nand_Write(bank, free_blk[bank], cnt, read_buffer, spare);
 			l2ptable[spare] = N_PPNS_PB*bank + free_blk[bank]*PAGES_PER_BLK + cnt;
 			valid_check[N_PPNS_PB*bank+victim_blk*PAGES_PER_BLK+i] = 0;
 			s.gc_write++;
@@ -231,7 +231,7 @@ void Ftl::Garbage_Collection(u32 bank)
 			cnt++;
 		}
 	}
-	nand.Nand_Erase(bank, victim_blk);
+	Nand_Erase(bank, victim_blk);
 	free_blk[bank] = victim_blk;
 	gc_check[bank] = 1;
 	free_check[bank]++;

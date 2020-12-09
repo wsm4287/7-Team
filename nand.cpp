@@ -17,8 +17,6 @@ Nand::~Nand(){
 
 }
 
-
-
 int Nand::Nand_Init(int nbanks, int nblks, int npages)
 {
 	// initialize the NAND flash memory 

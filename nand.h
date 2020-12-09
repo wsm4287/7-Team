@@ -5,6 +5,9 @@ typedef unsigned int 		u32;
 // nand class prototypes
 class Nand{
 
+	protected:
+
+
 	public:
 		Nand();
 		~Nand();
