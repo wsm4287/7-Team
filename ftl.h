@@ -41,19 +41,28 @@
 
 
 
-class Ftl// : public Nand
+class Ftl:public Nand// : public Nand
 {
+	private:
+		struct Ftl_stat {
+			int gc;
+			long host_write;
+			long gc_write;
+		} s;
+
     public:
-	struct Ftl_Stat {
-	    int gc;
-	    long host_write;
-	    long gc_write;
-	}s;
-        Ftl();
-        ~Ftl();
-        void Ftl_Open();
-        void Ftl_Write(u32 lpn, u32 *write_buffer);
-        void Ftl_Read(u32 lpn, u32 *read_buffer);
-	void Garbage_Collection(u32 bank);
-	static long now();
+			Ftl();
+			~Ftl();
+			void Ftl_Open();
+			void Ftl_Write(u32 lpn, u32 *write_buffer);
+			void Ftl_Read(u32 lpn, u32 *read_buffer);
+			void Garbage_Collection(u32 bank);
+			void Sim_Init();
+			int Get_gc();
+			void Input_gc(int);
+			long Get_host_write();
+			void Input_host_write(long);
+			long Get_gc_write();
+			void Input_gc_write(long);
+			static long now();
 };

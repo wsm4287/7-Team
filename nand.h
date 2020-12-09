@@ -1,10 +1,12 @@
 typedef unsigned int 		u32;
-
 #define DATA_SIZE			(sizeof(u32) * 8)
 #define SPARE_SIZE			(sizeof(u32))
 
-// function prototypes
+// nand class prototypes
 class Nand{
+
+	protected:
+
 
 	public:
 		Nand();
@@ -14,5 +16,8 @@ class Nand{
 		int Nand_Write(int bank, int blk, int page, u32 *data, u32 spare);
 		int Nand_Erase(int bank, int blk);
 		int Nand_Blkdump(int bank, int blk);
+
+
 };
+
 

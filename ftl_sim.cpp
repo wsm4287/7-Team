@@ -7,13 +7,13 @@
 #include "ftl.h"
 
 Ftl ftl;
-void Sim_Init(void)
+/*void Sim_Init(void)
 {
 	ftl.s.gc = 0;
 	ftl.s.host_write = 0;
 	ftl.s.gc_write = 0;
 	srand(time(NULL));
-}
+}*/
 
 void Show_Info(void)
 {
@@ -95,7 +95,7 @@ void Sim()
 	u32 write_buffer[SECTORS_PER_PAGE];
 	u32 read_buffer[SECTORS_PER_PAGE];
 
-	while (ftl.s.host_write < MAX_ITERATION)
+	while (ftl.Get_host_write() < MAX_ITERATION)
 	{
 		lpn = Get_Lpn();
 		
@@ -107,11 +107,11 @@ void Sim()
 		
 		if (memcmp(write_buffer, read_buffer, DATA_SIZE)) assert(0); 
 
-		ftl.s.host_write++;
-		if (ftl.s.host_write % N_LPNS == 0)
+		ftl.Input_host_write(ftl.Get_host_write()+1);
+		if (ftl.Get_host_write() % N_LPNS == 0)
 		{
 			printf("[Run %d] host %ld, valid page copy %ld, GC# %d, WAF %.2f\n",\
-				(int)ftl.s.host_write/N_LPNS, ftl.s.host_write, ftl.s.gc_write, ftl.s.gc, (double)(ftl.s.host_write+ftl.s.gc_write)/(double)ftl.s.host_write);
+				(int)ftl.Get_host_write()/N_LPNS, ftl.Get_host_write(), ftl.Get_gc_write(), ftl.Get_gc(), (double)(ftl.Get_host_write()+ftl.Get_gc_write())/(double)ftl.Get_host_write());
 		}
 
 	}
@@ -120,17 +120,17 @@ void Sim()
 void Show_Stat(void)
 {
 	printf("\nResults ------\n");
-	printf("Host writes: %ld\n", ftl.s.host_write);
-	printf("GC writes: %ld\n", ftl.s.gc_write);
-	printf("Number of GCs: %d\n", ftl.s.gc);
-	printf("Valid pages per GC: %.2f pages\n", (double)ftl.s.gc_write / (double)ftl.s.gc);
-	printf("WAF: %.2f\n", (double)(ftl.s.host_write + ftl.s.gc_write) / (double)ftl.s.host_write);
+	printf("Host writes: %ld\n", ftl.Get_host_write());
+	printf("GC writes: %ld\n", ftl.Get_gc_write());
+	printf("Number of GCs: %d\n", ftl.Get_gc());
+	printf("Valid pages per GC: %.2f pages\n", (double)ftl.Get_gc_write() / (double)ftl.Get_gc());
+	printf("WAF: %.2f\n", (double)(ftl.Get_host_write() + ftl.Get_gc_write()) / (double)ftl.Get_host_write());
 }
 
 int main(void)
 {
 	ftl.Ftl_Open();
-	Sim_Init();
+	ftl.Sim_Init();
 	Show_Info();
 	Sim();
 	Show_Stat();
