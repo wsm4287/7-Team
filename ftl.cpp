@@ -93,6 +93,8 @@ void Ftl::Ftl_Read(u32 lba, u32 num_sectors, u32 *read_buffer)
 		blk = (l2ptable[lpn] % N_PPNS_PB) / PAGES_PER_BLK;
 		p_page = (l2ptable[lpn] % N_PPNS_PB) % PAGES_PER_BLK;
 
+		if(gp == LRU)//////////////////
+			Input_Lru(blk);
 		Nand_Read(bank, blk, p_page, temp_page, &spare);
 
 		for(i=0;i<SECTORS_PER_PAGE;i++){
@@ -143,6 +145,9 @@ void Ftl::Ftl_Write(u32 lba, u32 num_sectors, u32 *write_buffer)
 					buf_cnt++;
 				}
 			}
+			if(gp == LRU)////////////////////
+				Input_Lru(p_ptr[bank]/PAGES_PER_BLK);
+	
 			Nand_Write(bank, p_ptr[bank]/PAGES_PER_BLK, p_ptr[bank]%PAGES_PER_BLK, temp_page, lpn);
 			s.ftl_write += SECTORS_PER_PAGE;
 			valid_check[N_PPNS_PB*bank+p_ptr[bank]] = 1;
@@ -151,8 +156,11 @@ void Ftl::Ftl_Write(u32 lba, u32 num_sectors, u32 *write_buffer)
 				p_ptr[bank] = free_blk[bank]*PAGES_PER_BLK;
 				gc_check[bank] = 0;
 			}else	p_ptr[bank]++;
-		}else{
-			Nand_Read(bank, (l2ptable[lpn]%N_PPNS_PB)/PAGES_PER_BLK, (l2ptable[lpn]%N_PPNS_PB)%PAGES_PER_BLK, r_buf, &spare); 
+		}
+		else{	
+			if(gp == LRU)////////////////////
+				Input_Lru((l2ptable[lpn]%N_PPNS_PB)/PAGES_PER_BLK);
+				Nand_Read(bank, (l2ptable[lpn]%N_PPNS_PB)/PAGES_PER_BLK, (l2ptable[lpn]%N_PPNS_PB)%PAGES_PER_BLK, r_buf, &spare); 
 			for(i=0;i<SECTORS_PER_PAGE;i++){
 				if(i<sect_offset || i>=sect_offset+num_sectors_to_write)
 					temp_page[i] = r_buf[i];
@@ -165,6 +173,8 @@ void Ftl::Ftl_Write(u32 lba, u32 num_sectors, u32 *write_buffer)
 			//#ifdef COST_BENEFIT
 			//age_check[BLKS_PER_BANK*bank+(l2ptable[lpn]%N_PPNS_PB)/PAGES_PER_BLK] = now();
 			//#endif
+			if(gp == LRU)/////////////////
+				Input_Lru(p_ptr[bank]/PAGES_PER_BLK);
 			Nand_Write(bank, p_ptr[bank]/PAGES_PER_BLK, p_ptr[bank]%PAGES_PER_BLK, temp_page, lpn);
 			s.ftl_write += SECTORS_PER_PAGE;
 			valid_check[N_PPNS_PB*bank+p_ptr[bank]] = 1;
@@ -232,6 +242,9 @@ void Ftl::Garbage_Collection(u32 bank)
 		free_blk[bank] = victim_blk;
 		gc_check[bank] = 1;
 		free_check[bank]++;
+	}
+	
+	else{  // lru/////////////////////////////// 
 	}
 
 /*#else
@@ -306,6 +319,8 @@ void Ftl::Sim_Init(){
 	s.gc = 0;
 	s.host_write = 0;
 	s.gc_write = 0;
+	lrusize = N_BANKS * BLKS_PER_BANK;
+	cout << lrusize << endl;
 	srand(time(NULL));
 }
 
@@ -356,5 +371,36 @@ int Ftl::Check_Gp(){
 int Ftl::Check_Sp(){
 	if(sp == RANDOM) return 1;
 	else return 0;
+}
+////////////////////////
+void Ftl::Input_Lru(int blk){
+	if(lru.find(blk) == lru.end()){
+		if(check.size() == lrusize){
+			int removed = check.back();
+			cout << "remove " << removed << endl;
+			lru.erase(removed);
+			check.pop_back();
+			check.push_front(blk);
+			lru[blk] = check.begin();
+			cout << blk << " add" << endl;
+		}
+		else{
+			check.push_front(blk);
+			lru[blk] = check.begin();
+			cout << blk << " add" << endl;
+		}
+	}
+
+	else{
+		check.remove(blk);
+		check.push_front(blk);
+		lru[blk] = check.begin();
+		//cout << "already, exist " << blk << endl;
+	}
+}
+
+int Ftl::Get_lru(){
+
+
 }
 

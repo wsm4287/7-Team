@@ -1,4 +1,9 @@
 #include "nand.h"
+#include <iostream>
+#include <map>
+#include <list>
+
+using namespace std;
 
 enum GcPolicy{
 	GREEDY,
@@ -23,6 +28,9 @@ class Ftl:public Nand
 			long ftl_write;//
 			long gc_write;
 		} s;
+		map<int, list<int> :: iterator> lru;
+		list<int> check;
+		int lrusize;
 
 	public:
 		Ftl();
@@ -45,4 +53,6 @@ class Ftl:public Nand
 		void Set_Policy(char*, char*);
 		int Check_Gp();
 		int Check_Sp();
+		void Input_Lru(int);
+		int Get_lru();
 };

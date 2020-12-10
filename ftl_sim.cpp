@@ -176,7 +176,6 @@ void Sim()
 		}
 		ftl.Ftl_Write(lba, num_sectors, write_buffer);
 		ftl.Ftl_Read(lba, num_sectors, read_buffer);
-		//printf("hehe%d %d\n", iter, ftl.Get_N_LPNS());
 		if (memcmp(write_buffer, read_buffer, num_sectors * sizeof(u32))) assert(0); 
 
 		ftl.Input_host_write(ftl.Get_host_write()+num_sectors);
@@ -199,8 +198,8 @@ void Show_Stat(void)
 	printf("FTL write sectors: %ld\n", ftl.Get_ftl_write());
 	printf("GC writes: %ld\n", ftl.Get_gc_write());
 	printf("Number of GCs: %d\n", ftl.Get_gc());
-	//printf("Valid pages per GC: %.2f pages\n", (double)ftl.Get_gc_write() / SECTORS_PER_PAGE / (double)ftl.Get_gc());
-	//printf("WAF: %.2f\n", (double)(ftl.Get_ftl_write() + ftl.Get_gc_write()) / (double)ftl.Get_host_write());
+	printf("Valid pages per GC: %.2f pages\n", (double)ftl.Get_gc_write() / SECTORS_PER_PAGE / (double)ftl.Get_gc());
+	printf("WAF: %.2f\n", (double)(ftl.Get_ftl_write() + ftl.Get_gc_write()) / (double)ftl.Get_host_write());
 }
 
 int main(int argc, char* argv[])
