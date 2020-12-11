@@ -15,92 +15,53 @@ int max_sectors = 32;//
 
 void Show_Info(void)
 {
-	printf("Bank: %d\n", ftl.Get_N_BANKS());
-	printf("Blocks / Bank: %d blocks\n", BLKS_PER_BANK);
-	printf("Pages / Block: %d pages\n", PAGES_PER_BLK);
-	printf("OP ratio: %d%%\n", OP_RATIO);
-	printf("Physical Blocks: %d\n", ftl.Get_N_BLOCKS());
-	printf("User Blocks: %d\n", ftl.Get_N_USER_BLOCKS());
-	printf("OP Blocks: %d\n", ftl.Get_N_OP_BLOCKS());
-	printf("PPNs: %d\n", ftl.Get_N_PPNS());
-	printf("LPNs: %d\n", ftl.Get_N_LPNS());
+	
+	cout << "Bank: " << ftl.Get_N_BANKS() << endl;
+	cout << "Blocks / Bank: " <<  BLKS_PER_BANK <<" blocks" << endl;
+	cout << "Pages / Bank: " <<  PAGES_PER_BLK <<" pages" << endl;
+	cout << "OP ratio: "<< OP_RATIO << endl;
+	cout << "Physical Blocks: " << ftl.Get_N_BLOCKS() << endl;
+	cout << "User Blocks: " << ftl.Get_N_USER_BLOCKS() << endl;
+	cout << "OP Blocks: " << ftl.Get_N_OP_BLOCKS() << endl;
+	cout << "PPNs: " << ftl.Get_N_PPNS() << endl;
+	cout << "LPNs: " << ftl.Get_N_LPNS() << endl;
 
-//#ifndef HOT_COLD
-if(ftl.Check_Sp())
-	printf("Workload: Random\n");
-//#else
-else
-	printf("Workload: Hot %d / Cold %d\n", HOT_RATIO, COLD_RATIO);
-//#endif
+	if(ftl.Check_Sp())
+		cout << "Workload: Random" << endl;
+	else
+		cout << "Workload: Hot " << HOT_RATIO << " / Cold " << COLD_RATIO << endl;
 
-//#ifndef COST_BENEFIT
-if(ftl.Check_Gp())
-	printf("FTL: Greedy policy\n");
-//#else
-else
-	printf("FTL: LRU policy\n");
-//#endif
+	if(ftl.Check_Gp())
+		cout << "FTL: Greedy policy" << endl;
+	else
+		cout << "FTL: LRU policy" << endl;
 
-	printf("Max Sectors: %d\n", max_sectors);
+	cout << "Max Sectors: " << max_sectors << endl;
 
-	printf("\n");
+	cout << endl;
 }
 
-/*u32 Get_Lpn()
-{
-	long lpn;
 
-//#ifdef HOT_COLD
-	if(ftl.Check_Sp()){
-		double prob;
-
-		prob = rand() % 100;
-		if (prob < HOT_RATIO) 
-		{
-		// HOT
-		//	printf("HOT\n");
-			lpn = rand() % ftl.Get_HOT_LPN();
-		} 
-		else 
-		{
-		// COLD
-		//	printf("COLD\n");
-			lpn = ftl.Get_HOT_LPN() + (rand() % ftl.Get_COLD_LPN());
-		}
-	}
-	else{
-//#else
-	lpn = rand() % ftl.Get_N_LPNS();
-//#endif
-	}
-	return lpn;
-}*/
 
 long Get_Lba()
 {
 	long lba;
 
-//#ifdef HOT_COLD
-	if(ftl.Check_Sp()){
+	if(ftl.Check_Sp() == 0){
 		double prob;
 
 		prob = rand() % 100;
 		if (prob < HOT_RATIO) 
 		{
-		// HOT
 			lba = rand() % ftl.Get_HOT_LBA();
 		} 
 		else 
 		{
-		// COLD
-		//	printf("COLD\n");
 			lba = ftl.Get_HOT_LBA() + (rand() % ftl.Get_COLD_LBA());
 		}
 	}
 	else{
-//#else
 	lba = rand() % ftl.Get_N_LBAS();
-//#endif
 	}
 	return lba;
 }
@@ -137,30 +98,6 @@ long Get_Data(long lba)
 
 void Sim()
 {
-/*	u32 lpn;
-	u32 write_buffer[SECTORS_PER_PAGE];
-	u32 read_buffer[SECTORS_PER_PAGE];
-
-	while (ftl.Get_host_write() < ftl.Get_MAX_ITERATION())
-	{
-		lpn = Get_Lpn();
-		
-		memset(write_buffer, Get_Data(lpn), DATA_SIZE);
-		memset(read_buffer, 0, DATA_SIZE);
-
-		ftl.Ftl_Write(lpn, write_buffer);
-		ftl.Ftl_Read(lpn, read_buffer);
-		
-		if (memcmp(write_buffer, read_buffer, DATA_SIZE)) assert(0); 
-
-		ftl.Input_host_write(ftl.Get_host_write()+1);
-		if (ftl.Get_host_write() % ftl.Get_N_LPNS() == 0)
-		{
-			printf("[Run %d] host %ld, valid page copy %ld, GC# %d, WAF %.2f\n",\
-				(int)ftl.Get_host_write()/ftl.Get_N_LPNS(), ftl.Get_host_write(), ftl.Get_gc_write(), ftl.Get_gc(), (double)(ftl.Get_host_write()+ftl.Get_gc_write())/(double)ftl.Get_host_write());
-		}
-
-	}*/
 	long lba, num_sectors, i;
 	u32 *write_buffer;
 	u32 *read_buffer;
@@ -178,11 +115,13 @@ void Sim()
 		ftl.Ftl_Read(lba, num_sectors, read_buffer);
 		if (memcmp(write_buffer, read_buffer, num_sectors * sizeof(u32))) assert(0); 
 
-		ftl.Input_host_write(ftl.Get_host_write()+num_sectors);
+		ftl.Input_Host_Write(ftl.Get_Host_Write()+num_sectors);
 		iter++;
 		if (iter % ftl.Get_N_LPNS() == 0) 
 		{
-			printf("[Run %d] host %ld, ftl %ld, valid page copy %ld, GC# %d, WAF %.2f\n",(int)iter/ftl.Get_N_LPNS(), ftl.Get_host_write(), ftl.Get_ftl_write(), ftl.Get_gc_write() / SECTORS_PER_PAGE, ftl.Get_gc(), (double)(ftl.Get_ftl_write()+ftl.Get_gc_write())/(double)ftl.Get_host_write());
+			cout << fixed;
+			cout.precision(2);
+			cout << "[Run " << (int)iter/ftl.Get_N_LPNS() << "] host " << ftl.Get_Host_Write() << ", ftl " << ftl.Get_Ftl_Write() << ", valid page copy " << ftl.Get_Gc_Write() / SECTORS_PER_PAGE << ", GC# " << ftl.Get_Gc() << ", WAF " << (double)(ftl.Get_Ftl_Write()+ftl.Get_Gc_Write())/(double)ftl.Get_Host_Write() << endl;
 		}
 
 		free(write_buffer);
@@ -193,26 +132,26 @@ void Sim()
 
 void Show_Stat(void)
 {
-	printf("\nResults ------\n");
-	printf("Host writes: %ld\n", ftl.Get_host_write());
-	printf("FTL write sectors: %ld\n", ftl.Get_ftl_write());
-	printf("GC writes: %ld\n", ftl.Get_gc_write());
-	printf("Number of GCs: %d\n", ftl.Get_gc());
-	printf("Valid pages per GC: %.2f pages\n", (double)ftl.Get_gc_write() / SECTORS_PER_PAGE / (double)ftl.Get_gc());
-	printf("WAF: %.2f\n", (double)(ftl.Get_ftl_write() + ftl.Get_gc_write()) / (double)ftl.Get_host_write());
+	cout << endl << "Results ------- " << endl;
+	cout << "Host writes: " << ftl.Get_Host_Write() << endl;
+	cout << "FTL write sectors: " << ftl.Get_Ftl_Write() << endl;
+	cout << "GC writes: " << ftl.Get_Gc_Write() << endl;
+	cout << "Number of GCs: " << ftl.Get_Gc() << endl;
+	cout << fixed;
+	cout.precision(2);
+	cout << "Valid pages per GC: " <<  (double)ftl.Get_Gc_Write() / SECTORS_PER_PAGE / (double)ftl.Get_Gc()<< " pages" << endl;
+	cout << "WAF: " << (double)(ftl.Get_Ftl_Write() + ftl.Get_Gc_Write()) / (double)ftl.Get_Host_Write() << endl;
 }
 
 int main(int argc, char* argv[])
 {
-	if(argc < 2){
-		cout << "Usage: " << argv[0] << " <num> <policy> <stream>" << endl;
+	if(argc < 4){
+		cout << "Usage: " << argv[0] << "<num> <policy> <stream>" << endl;
 		exit(1);
 	}
-	//ftl.Input_N_BANKS(atoi(argv[1]));
-	//ftl.Set_Variable();
-	ftl.Set_Policy(argv[1], argv[2]);
+	ftl.Input_N_RUNS(atoi(argv[1]));
+	ftl.Set_Policy(argv[2], argv[3]);
 	ftl.Sim_Init();
-	//ftl.Ftl_Open();
 	Show_Info();
 	Sim();
 	Show_Stat();

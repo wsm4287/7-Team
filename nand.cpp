@@ -43,6 +43,10 @@ int Nand::Get_HOT_LBA(){
 int Nand::Get_COLD_LBA(){
 	return COLD_LBA;
 }
+void Nand::Input_N_RUNS(int n_runs){
+	N_RUNS = n_runs;
+	MAX_ITERATION = N_LPNS * N_RUNS;
+}
 
 void Nand::Set_Variable(){
 	N_PPNS = N_PPNS_PB * N_BANKS;
@@ -51,9 +55,6 @@ void Nand::Set_Variable(){
 	N_OP_BLOCKS = N_OP_BLOCKS_PB * N_BANKS;
 	N_LPNS = N_LPNS_PB * N_BANKS;
 	N_LBAS = N_LPNS * SECTORS_PER_PAGE;
-	MAX_ITERATION = N_LPNS * N_RUNS;
-	//HOT_LPN = (N_LPNS * HOT_LPN_RATIO) / 100;
-	//COLD_LPN = (N_LPNS * COLD_LPN_RATIO) / 100;
 	HOT_LBA = (N_LBAS * HOT_LBA_RATIO) / 100;//
 	COLD_LBA = (N_LBAS * COLD_LBA_RATIO) / 100;//
 }
@@ -68,11 +69,12 @@ Nand::Nand(){
 	// returns 0 on success
 	// returns -1 on errors with printing appropriate error message
 
-	int i_bank, i_blk, i_page;
-	int fd_bank, cur;
-	char bank_num[100];
+	int i_bank, i_blk, i_page, r;
+	int fd_bank;
+	char *bank_num = new char[100];
+	off_t cur;
 
-	u32 init_data[SECTORS_PER_PAGE];
+	u32 *init_data = new u32[SECTORS_PER_PAGE];
 	memset(init_data, 0xFF, DATA_SIZE);
 	
 	if(nbanks>0 && nblks>0 && npages>0){
@@ -91,74 +93,76 @@ Nand::Nand(){
 	else{ 
 		cout<<"number of bank, block, page should be bigger than 0" << endl; 
 	}
+	delete bank_num;
+	delete init_data;
+
 }
+
 int Nand::Nand_Write(int bank, int blk, int page, u32 *data, u32 spare)
 {
 	// write "data" and "spare" into the NAND flash memory pointed to by "blk" and "page"
 	// returns 0 on success
 	// returns -1 on errors with printing appropriate error message
 
-	int fd_bank, r;
-	int  read_buf[100];
-	char bank_num[100];
+	int fd_bank,r;
+	int read_buf[100];
+	char *bank_num = new char[100];
 	off_t cur;
 
 	sprintf(bank_num, "./BANK_%d", bank);
 	fd_bank = open(bank_num, O_RDWR, 00777);
 
-	if(page<0||page>=PAGES_PER_BLK) {printf("write(%d,%d,%d): failed, invalid page number\n",bank, blk, page);
-		close(fd_bank);
-		return -1;}
-	else if(blk<0||blk>=BLKS_PER_BANK) {printf("write(%d,%d,%d): failed, invalid block number\n",bank, blk, page);
-		close(fd_bank);
-		return -1;}
-	else if(bank<0||bank>=N_BANKS) {printf("write(%d,%d,%d): failed, invalid bank number\n", bank, blk, page);
-		close(fd_bank);
-		return -1;}
-	else{
-	if(page==0){                           
-		cur=lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*page, SEEK_SET);
-		r = read(fd_bank, read_buf, sizeof(read_buf));
-		if(read_buf[0]==0xFFFFFFFF&&read_buf[1]==0xFFFFFFFF&&read_buf[2]==0xFFFFFFFF&&read_buf[3]==0xFFFFFFFF&&read_buf[4]==0xFFFFFFFF&&read_buf[5]==0xFFFFFFFF&&read_buf[6]==0xFFFFFFFF&&read_buf[7]==0xFFFFFFFF){
-			cur=lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*page, SEEK_SET);
-			write(fd_bank, data, DATA_SIZE);
-			write(fd_bank, &spare, SPARE_SIZE); 
-			/*if(*data==0){
-				if(spare==0)
-					printf("write(%d,%d,%d): data = 0x00000000, spare = 0x00000000\n", bank, blk, page);
-				else
-					printf("write(%d,%d,%d): data = 0x00000000, spare = %#010x\n", bank, blk, page, spare);
-			}else
-				printf("write(%d,%d,%d): data = %#x, spare = %#010x\n", bank, blk, page,*data, spare);*/
-			close(fd_bank);
-			return 0;			 
-		}
-		else{
-			printf("write(%d,%d,%d): failed, the page was already written\n", bank, blk, page);				close(fd_bank);
-			return -1;
-		}
-	}		
- 	else{
-		cur=lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*(page-1), SEEK_SET);
-		r = read(fd_bank, read_buf, sizeof(read_buf));
-		if(read_buf[0]==0xFFFFFFFF&&read_buf[1]==0xFFFFFFFF&&read_buf[2]==0xFFFFFFFF&&read_buf[3]==0xFFFFFFFF&&read_buf[4]==0xFFFFFFFF&&read_buf[5]==0xFFFFFFFF&&read_buf[6]==0xFFFFFFFF&&read_buf[7]==0xFFFFFFFF){
-			printf("write(%d,%d,%d): failed, the page is not being sequentially written\n",bank, blk, page);
-			close(fd_bank);
-			return -1;
-		}
-		else{	
-			cur = lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*page, SEEK_SET);
+	delete bank_num;
 
-			write(fd_bank, data, DATA_SIZE);
-			write(fd_bank, &spare, SPARE_SIZE);
-			/*if(*data==0)
-				printf("write(%d,%d,%d): data = 0x00000000, spare = %#010x\n", bank, blk, page, spare);
-			else
-				printf("write(%d,%d,%d): data = %#x, spare = %#010x\n", bank, blk, page, *data, spare);*/
-			close(fd_bank);
-			return 0;
-		}
+	if(page<0||page>=PAGES_PER_BLK) {
+		cout <<"write(" << bank << "," << blk << "," << page << "): failed, invalid page number" << endl;
+		close(fd_bank);
+		return -1;
 	}
+	else if(blk<0||blk>=BLKS_PER_BANK) {
+		cout <<"write(" << bank << "," << blk << "," << page << "): failed, invalid block number" << endl;
+		printf("write(%d,%d,%d): failed, invalid block number\n",bank, blk, page);
+		close(fd_bank);
+		return -1;
+	}
+	else if(bank<0||bank>=N_BANKS) {
+		cout <<"write(" << bank << "," << blk << "," << page << "): failed, invalid bank number" << endl;
+		close(fd_bank);
+		return -1;
+	}
+	else{
+		if(page==0){                           
+			cur=lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*page, SEEK_SET);
+			r = read(fd_bank, read_buf, sizeof(read_buf));
+			if(read_buf[0]==0xFFFFFFFF&&read_buf[1]==0xFFFFFFFF&&read_buf[2]==0xFFFFFFFF&&read_buf[3]==0xFFFFFFFF&&read_buf[4]==0xFFFFFFFF&&read_buf[5]==0xFFFFFFFF&&read_buf[6]==0xFFFFFFFF&&read_buf[7]==0xFFFFFFFF){
+				cur=lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*page, SEEK_SET);
+				write(fd_bank, data, DATA_SIZE);
+				write(fd_bank, &spare, SPARE_SIZE); 
+				close(fd_bank);
+				return 0;			 
+			}
+			else{
+				cout <<"write(" << bank << "," << blk << "," << page << "):  failed, the page was already written" << endl;
+				close(fd_bank);
+				return -1;
+			}
+		}		
+	 	else{
+			cur=lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*(page-1), SEEK_SET);
+			r = read(fd_bank, read_buf, sizeof(read_buf));
+			if(read_buf[0]==0xFFFFFFFF&&read_buf[1]==0xFFFFFFFF&&read_buf[2]==0xFFFFFFFF&&read_buf[3]==0xFFFFFFFF&&read_buf[4]==0xFFFFFFFF&&read_buf[5]==0xFFFFFFFF&&read_buf[6]==0xFFFFFFFF&&read_buf[7]==0xFFFFFFFF){
+				cout <<"write(" << bank << "," << blk << "," << page << "):  failed, the page is not being sequentially written" << endl;	
+				close(fd_bank);
+				return -1;
+			}
+			else{	
+				cur = lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*page, SEEK_SET);
+				write(fd_bank, data, DATA_SIZE);
+				write(fd_bank, &spare, SPARE_SIZE);
+				close(fd_bank);
+				return 0;
+			}
+		}
 	}
 
 }
@@ -170,24 +174,28 @@ int Nand::Nand_Read(int bank, int blk, int page, u32 *data, u32 *spare)
 	// returns 0 on success
 	// returns -1 on errors with printing appropriate error message
 
-	int fd_bank, r;
-	int  read_buf[100];
-	char bank_num[100];
+	int fd_bank,r;
+	int *read_buf = new int[100];
+	char *bank_num = new char[100];
 	off_t cur;
 
 	sprintf(bank_num, "./BANK_%d", bank);
 	fd_bank = open(bank_num, O_RDONLY, 00777);
+	delete bank_num;
 
 	if(page<0||page>=PAGES_PER_BLK){
-		printf("read(%d,%d,%d): failed, invalid page number\n",bank, blk, page);
+		cout <<"read(" << bank << "," << blk << "," << page << "): failed, invalid page number" << endl;
+		delete read_buf;
 		close(fd_bank);
 		return -1;
 	}else if(blk<0||blk>=BLKS_PER_BANK){
-		printf("read(%d,%d,%d): failed, invalid block number\n",bank, blk, page);
+		cout <<"read(" << bank << "," << blk << "," << page << "): failed, invalid block number" << endl;
+		delete read_buf;
 		close(fd_bank);
 		return -1;
 	}else if(bank<0||bank>=N_BANKS){
-		printf("read(%d,%d,%d): failed, invalid bank number\n", bank, blk, page);
+		cout <<"read(" << bank << "," << blk << "," << page << "): failed, invalid bank number" << endl;
+		delete read_buf;
 		close(fd_bank);
 		return -1;
 	}else{
@@ -196,17 +204,11 @@ int Nand::Nand_Read(int bank, int blk, int page, u32 *data, u32 *spare)
 		r = read(fd_bank, spare, SPARE_SIZE);
 		if(data[0]==0xFFFFFFFF && data[1]==0xFFFFFFFF && data[2]==0xFFFFFFFF && data[3]==0xFFFFFFFF && data[4]==0xFFFFFFFF && data[5]==0xFFFFFFFF && data[6]==0xFFFFFFFF && data[7]==0xFFFFFFFF){
 			close(fd_bank);
+			delete read_buf;
 			return -1;
 		}else{
-			/*if(*data==0){
-				if(spare==0)
-					printf("read(%d,%d,%d): data = 0x00000000, spare = 0x00000000\n",bank, blk, page);
-				else
-					printf("read(%d,%d,%d): data = 0x00000000, spare = %#010x\n",bank, blk, page, *spare);
-			}
-			else
-				printf("read(%d,%d,%d): data = %#x, spare = %#010x\n",bank, blk, page, *data, *spare);*/
 			close(fd_bank);
+			delete read_buf;
 			return 0;
 		}
 	}
@@ -218,16 +220,17 @@ int Nand::Nand_Erase(int bank, int blk)
 	// returns 0 on success
 	// returns -1 on errors with printing appropriate error message
 
-	int fd_bank, r, i, j;
-	int  read_buf[100];
-	char bank_num[100];
+	int fd_bank, i, j,r;
+	int  *read_buf = new int[100];
+	char *bank_num = new char[100];
 	off_t cur;
 
-	u32 init_data[SECTORS_PER_PAGE];
+	u32 *init_data = new u32[SECTORS_PER_PAGE];
 	memset(init_data, 0xFF, DATA_SIZE);
 
 	sprintf(bank_num, "./BANK_%d", bank);
 	fd_bank = open(bank_num, O_RDWR, 00777);
+	delete bank_num;
 	j = 0;
 	for(i=0;i<PAGES_PER_BLK;i++){
 		cur = lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*i, SEEK_SET);
@@ -235,7 +238,9 @@ int Nand::Nand_Erase(int bank, int blk)
 		if(read_buf[0]==0xFFFFFFFF&&read_buf[1]==0xFFFFFFFF&&read_buf[2]==0xFFFFFFFF&&read_buf[3]==0xFFFFFFFF&&read_buf[4]==0xFFFFFFFF&&read_buf[5]==0xFFFFFFFF&&read_buf[6]==0xFFFFFFFF&&read_buf[7]==0xFFFFFFFF) j++;
 	}
 	if(j==PAGES_PER_BLK){
-		printf("erase(%d,%d): failed, trying to erase a free block\n",bank, blk);
+		cout <<"erase(" << bank << "," << blk << "): failed, trying to erase a free block" << endl;
+		delete read_buf;
+		delete init_data;
 		close(fd_bank);
 		return -1;
 	}else{
@@ -243,7 +248,8 @@ int Nand::Nand_Erase(int bank, int blk)
 			cur = lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*i, SEEK_SET);
 			write(fd_bank,init_data,DATA_SIZE);
 		}
-		//printf("erase(%d,%d): block erased\n", bank, blk);
+		delete read_buf;
+		delete init_data;
 		close(fd_bank);
 		return 0;
         }
@@ -257,13 +263,14 @@ int Nand::Nand_Blkdump(int bank, int blk)
 	// returns -1 on errors with printing appropriate error message
 
 	
-	int fd_bank, r, i, j;
-	int  read_buf[100];
-	char bank_num[100];
+	int fd_bank, i, j, r;
+	int  *read_buf = new int[100];
+	char *bank_num = new char[100];
 	off_t cur;
 
 	sprintf(bank_num, "./BANK_%d", bank);
 	fd_bank = open(bank_num, O_RDONLY, 00777);
+	delete bank_num;
 	for(i=0;i<PAGES_PER_BLK;i++){
 		cur = lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*i, SEEK_SET);
 		r = read(fd_bank, read_buf, DATA_SIZE);
@@ -272,17 +279,20 @@ int Nand::Nand_Blkdump(int bank, int blk)
 		}
 	}
 	if(i==0){
-		printf("blkdump(%d,%d): FREE\n",bank, blk);
+		cout <<"blkdump(" << bank << "," << blk << "): FREE" << endl;
+		delete read_buf;
 		close(fd_bank);
 		return 0;
 	}else{
-		printf("blkdump(%d,%d): Total %d page(s) written\n",bank, blk,i);
+		cout <<"blkdump(" << bank << "," << blk << "): Total %d page(s) written" << endl;
+
 	}
 	for(j=0;j<i;j++){
 		cur = lseek(fd_bank, 36*PAGES_PER_BLK*blk+36*j, SEEK_SET);
 		r = read(fd_bank, read_buf, sizeof(read_buf));
-		printf("blkdump(%d,%d,%d): data = %#x, spare = %#010x\n", bank, blk, j, read_buf[0], read_buf[8]);
+		cout <<"blkdump(" << bank << "," << blk << "," << j <<"): data = " << read_buf[0] << ",  spare = " << read_buf[8] << endl;
 	}
+	delete read_buf;
 	close(fd_bank);
 	return 0;
 }
