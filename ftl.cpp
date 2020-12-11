@@ -60,20 +60,8 @@ Ftl::Ftl(){
 		free_blk[i] = BLKS_PER_BANK - 1;
 }
 
-//void Ftl::Ftl_Read(u32 lpn, u32 *read_buffer)
 void Ftl::Ftl_Read(u32 lba, u32 num_sectors, u32 *read_buffer)
 {	
-	/*u32 bank, blk, p_page, ppn;
-	u32 spare;
-	
-	ppn = l2ptable[lpn];
-	bank = lpn % N_BANKS;
-	blk = (ppn % N_PPNS_PB) / PAGES_PER_BLK;
-	p_page = (ppn % N_PPNS_PB) % PAGES_PER_BLK;
-
-	Nand_Read(bank, blk, p_page, read_buffer, &spare);	
-	return;*/
-
 	int bank, blk, p_page, i;
 	int lpn, sect_offset, remain_sects, num_sectors_to_read, buf_cnt;
 	u32 temp_page[SECTORS_PER_PAGE], spare;
@@ -93,8 +81,6 @@ void Ftl::Ftl_Read(u32 lba, u32 num_sectors, u32 *read_buffer)
 		blk = (l2ptable[lpn] % N_PPNS_PB) / PAGES_PER_BLK;
 		p_page = (l2ptable[lpn] % N_PPNS_PB) % PAGES_PER_BLK;
 
-		if(gp == LRU)//////////////////
-			Input_Lru(blk);
 		Nand_Read(bank, blk, p_page, temp_page, &spare);
 
 		for(i=0;i<SECTORS_PER_PAGE;i++){
@@ -145,9 +131,6 @@ void Ftl::Ftl_Write(u32 lba, u32 num_sectors, u32 *write_buffer)
 					buf_cnt++;
 				}
 			}
-			if(gp == LRU)////////////////////
-				Input_Lru(p_ptr[bank]/PAGES_PER_BLK);
-	
 			Nand_Write(bank, p_ptr[bank]/PAGES_PER_BLK, p_ptr[bank]%PAGES_PER_BLK, temp_page, lpn);
 			s.ftl_write += SECTORS_PER_PAGE;
 			valid_check[N_PPNS_PB*bank+p_ptr[bank]] = 1;
@@ -159,8 +142,8 @@ void Ftl::Ftl_Write(u32 lba, u32 num_sectors, u32 *write_buffer)
 		}
 		else{	
 			if(gp == LRU)////////////////////
-				Input_Lru((l2ptable[lpn]%N_PPNS_PB)/PAGES_PER_BLK);
-				Nand_Read(bank, (l2ptable[lpn]%N_PPNS_PB)/PAGES_PER_BLK, (l2ptable[lpn]%N_PPNS_PB)%PAGES_PER_BLK, r_buf, &spare); 
+				Input_Lru(bank, (l2ptable[lpn]%N_PPNS_PB)/PAGES_PER_BLK);
+			Nand_Read(bank, (l2ptable[lpn]%N_PPNS_PB)/PAGES_PER_BLK, (l2ptable[lpn]%N_PPNS_PB)%PAGES_PER_BLK, r_buf, &spare); 
 			for(i=0;i<SECTORS_PER_PAGE;i++){
 				if(i<sect_offset || i>=sect_offset+num_sectors_to_write)
 					temp_page[i] = r_buf[i];
@@ -170,11 +153,6 @@ void Ftl::Ftl_Write(u32 lba, u32 num_sectors, u32 *write_buffer)
 				}
 			}
 			valid_check[l2ptable[lpn]] = 0;
-			//#ifdef COST_BENEFIT
-			//age_check[BLKS_PER_BANK*bank+(l2ptable[lpn]%N_PPNS_PB)/PAGES_PER_BLK] = now();
-			//#endif
-			if(gp == LRU)/////////////////
-				Input_Lru(p_ptr[bank]/PAGES_PER_BLK);
 			Nand_Write(bank, p_ptr[bank]/PAGES_PER_BLK, p_ptr[bank]%PAGES_PER_BLK, temp_page, lpn);
 			s.ftl_write += SECTORS_PER_PAGE;
 			valid_check[N_PPNS_PB*bank+p_ptr[bank]] = 1;
@@ -245,73 +223,32 @@ void Ftl::Garbage_Collection(u32 bank)
 	}
 	
 	else{  // lru/////////////////////////////// 
-	}
+		int cnt_valid_page[BLKS_PER_BANK];
+		int i, j, victim_blk, cnt, min;
 
-/*#else
-	// Cost-Benefit policy
-	int cnt_valid_page[BLKS_PER_BANK];
-	int i, j, victim_blk, cnt;
-	float max;
-	float u[BLKS_PER_BANK], temp[BLKS_PER_BANK];
-	long age[BLKS_PER_BANK];
+		u32 read_buffer[SECTORS_PER_PAGE];
+		u32 spare;
 
-	u32 read_buffer[SECTORS_PER_PAGE];
-	u32 spare;
-
-	cnt = 0;
-	for(j=0;j<BLKS_PER_BANK;j++){
-		if(j == gc_blk){
-			cnt_valid_page[j] = PAGES_PER_BLK;
-			continue;
-		}
-		for(i=0;i<PAGES_PER_BLK;i++){
-			if(valid_check[N_PPNS_PB*bank+j*PAGES_PER_BLK+i] == 1)
-				cnt++;
-		}
-		cnt_valid_page[j] = cnt;
+		victim_blk = Get_lru(bank);
+		
 		cnt = 0;
-	}
-	for(i=0;i<BLKS_PER_BANK;i++)
-		u[i] = (float)((float)cnt_valid_page[i] / (float)PAGES_PER_BLK);
-	for(j=0;j<BLKS_PER_BANK;j++){
-		if(j == gc_blk){
-			age[j] = 0;
-			continue;
+		for(i=0;i<PAGES_PER_BLK;i++){
+			if(valid_check[N_PPNS_PB*bank+victim_blk*PAGES_PER_BLK+i] == 1){
+				Nand_Read(bank, victim_blk, i, read_buffer, &spare);
+				Nand_Write(bank, free_blk[bank], cnt, read_buffer, spare);
+				l2ptable[spare] = N_PPNS_PB*bank + free_blk[bank]*PAGES_PER_BLK + cnt;
+				valid_check[N_PPNS_PB*bank+victim_blk*PAGES_PER_BLK+i] = 0;
+				valid_check[N_PPNS_PB*bank + free_blk[bank]*PAGES_PER_BLK + cnt] = 1;
+				s.gc_write += SECTORS_PER_PAGE;
+				p_ptr[bank]++;
+				cnt++;	
+			}
 		}
-		age[j] = now() - age_check[BLKS_PER_BANK*bank+j];
+		Nand_Erase(bank, victim_blk);
+		free_blk[bank] = victim_blk;
+		gc_check[bank] = 1;
+		free_check[bank]++;
 	}
-	for(i=0;i<BLKS_PER_BANK;i++)
-		temp[i] = (float)((float)age[i] * (float)(1-u[i])/(float)(2*u[i]));
-	
-	max = temp[0];
-	victim_blk = 0;
-	for(i=1;i<BLKS_PER_BANK;i++){
-		if(temp[i]>max){
-			max = temp[i];
-			victim_blk = i;
-		}
-	}
-	cnt = 0;
-	for(i=0;i<PAGES_PER_BLK;i++){
-		if(valid_check[N_PPNS_PB*bank+victim_blk*PAGES_PER_BLK+i] == 1){
-			Nand_Read(bank, victim_blk, i, read_buffer, &spare);
-			Nand_Write(bank, free_blk[bank], cnt, read_buffer, spare);
-			l2ptable[spare] = N_PPNS_PB*bank + free_blk[bank]*PAGES_PER_BLK + cnt;
-			valid_check[N_PPNS_PB*bank+victim_blk*PAGES_PER_BLK+i] = 0;
-			s.gc_write++;
-			age_check[BLKS_PER_BANK*bank+victim_blk] = now();
-			valid_check[N_PPNS_PB*bank + free_blk[bank]*PAGES_PER_BLK + cnt] = 1;
-			p_ptr[bank]++;
-			cnt++;
-		}
-	}
-	Nand_Erase(bank, victim_blk);
-	free_blk[bank] = victim_blk;
-	gc_check[bank] = 1;
-	free_check[bank]++;
-
-#endif
-*/
 	return;
 }
 
@@ -319,8 +256,8 @@ void Ftl::Sim_Init(){
 	s.gc = 0;
 	s.host_write = 0;
 	s.gc_write = 0;
-	lrusize = N_BANKS * BLKS_PER_BANK;
-	cout << lrusize << endl;
+	lrusize0 = BLKS_PER_BANK;
+	lrusize1 = BLKS_PER_BANK;
 	srand(time(NULL));
 }
 
@@ -373,34 +310,69 @@ int Ftl::Check_Sp(){
 	else return 0;
 }
 ////////////////////////
-void Ftl::Input_Lru(int blk){
-	if(lru.find(blk) == lru.end()){
-		if(check.size() == lrusize){
-			int removed = check.back();
-			cout << "remove " << removed << endl;
-			lru.erase(removed);
-			check.pop_back();
-			check.push_front(blk);
-			lru[blk] = check.begin();
-			cout << blk << " add" << endl;
+void Ftl::Input_Lru(int bank, int blk){
+	if(!bank){
+		if(lru0.find(blk) == lru0.end()){
+			if(check0.size() == lrusize0){
+				int removed = check0.back();
+				//cout << "remove " << removed << endl;
+				lru0.erase(removed);
+				check0.pop_back();
+				check0.push_front(blk);
+				lru0[blk] = check0.begin();
+				//cout << blk << " add" << endl;
+			}
+			else{
+				check0.push_front(blk);
+				lru0[blk] = check0.begin();
+				//cout << bank << " " << blk << " add" << endl;
+			}
 		}
 		else{
-			check.push_front(blk);
-			lru[blk] = check.begin();
-			cout << blk << " add" << endl;
+			check0.remove(blk);
+			check0.push_front(blk);
+			lru0[blk] = check0.begin();
+			//cout << "already, exist " << blk << endl;
 		}
 	}
-
 	else{
-		check.remove(blk);
-		check.push_front(blk);
-		lru[blk] = check.begin();
-		//cout << "already, exist " << blk << endl;
+		if(lru1.find(blk) == lru1.end()){
+			if(check1.size() == lrusize1){
+				int removed = check1.back();
+				//cout << "remove " << removed << endl;
+				lru1.erase(removed);
+				check1.pop_back();
+				check1.push_front(blk);
+				lru1[blk] = check1.begin();
+				//cout << blk << " add" << endl;
+			}
+			else{
+				check1.push_front(blk);
+				lru1[blk] = check1.begin();
+				//cout << bank << " " << blk << " add" << endl;
+			}
+		}
+
+		else{
+			check1.remove(blk);
+			check1.push_front(blk);
+			lru1[blk] = check1.begin();
+			//cout << "already, exist " << blk << endl;
+		}		
 	}
 }
 
-int Ftl::Get_lru(){
+int Ftl::Get_lru(int bank){
+	int victim_blk;
+	if(!bank){
+		victim_blk = check0.front();
+		check0.pop_front();
+	}
+	else{
+		victim_blk = check1.front();
+		check1.pop_front();
+	}
 
-
+	return victim_blk;
 }
 

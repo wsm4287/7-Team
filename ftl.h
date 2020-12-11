@@ -28,16 +28,17 @@ class Ftl:public Nand
 			long ftl_write;//
 			long gc_write;
 		} s;
-		map<int, list<int> :: iterator> lru;
-		list<int> check;
-		int lrusize;
+		map<int, list<int> :: iterator> lru0;
+		list<int> check0;
+		int lrusize0;
+		map<int, list<int> :: iterator> lru1;
+		list<int> check1;
+		int lrusize1;
 
 	public:
 		Ftl();
 		~Ftl();
-		//void Ftl_Write(u32 lpn, u32 *write_buffer);
 		void Ftl_Write(u32 lba, u32 num_sectors, u32 *write_buffer);//
-		//void Ftl_Read(u32 lpn, u32 *read_buffer);
 		void Ftl_Read(u32 lba, u32 num_sectors, u32 *read_buffer);//
 		void Garbage_Collection(u32 bank);
 		void Sim_Init();
@@ -53,6 +54,6 @@ class Ftl:public Nand
 		void Set_Policy(char*, char*);
 		int Check_Gp();
 		int Check_Sp();
-		void Input_Lru(int);
-		int Get_lru();
+		void Input_Lru(int, int);//////
+		int Get_lru(int);//////
 };
