@@ -175,7 +175,6 @@ int Nand::Nand_Read(int bank, int blk, int page, u32 *data, u32 *spare)
 	// returns -1 on errors with printing appropriate error message
 
 	int fd_bank,r;
-	int *read_buf = new int[100];
 	char *bank_num = new char[100];
 	off_t cur;
 
@@ -185,17 +184,14 @@ int Nand::Nand_Read(int bank, int blk, int page, u32 *data, u32 *spare)
 
 	if(page<0||page>=PAGES_PER_BLK){
 		cout <<"read(" << bank << "," << blk << "," << page << "): failed, invalid page number" << endl;
-		delete read_buf;
 		close(fd_bank);
 		return -1;
 	}else if(blk<0||blk>=BLKS_PER_BANK){
 		cout <<"read(" << bank << "," << blk << "," << page << "): failed, invalid block number" << endl;
-		delete read_buf;
 		close(fd_bank);
 		return -1;
 	}else if(bank<0||bank>=N_BANKS){
 		cout <<"read(" << bank << "," << blk << "," << page << "): failed, invalid bank number" << endl;
-		delete read_buf;
 		close(fd_bank);
 		return -1;
 	}else{
@@ -204,11 +200,9 @@ int Nand::Nand_Read(int bank, int blk, int page, u32 *data, u32 *spare)
 		r = read(fd_bank, spare, SPARE_SIZE);
 		if(data[0]==0xFFFFFFFF && data[1]==0xFFFFFFFF && data[2]==0xFFFFFFFF && data[3]==0xFFFFFFFF && data[4]==0xFFFFFFFF && data[5]==0xFFFFFFFF && data[6]==0xFFFFFFFF && data[7]==0xFFFFFFFF){
 			close(fd_bank);
-			delete read_buf;
 			return -1;
 		}else{
 			close(fd_bank);
-			delete read_buf;
 			return 0;
 		}
 	}

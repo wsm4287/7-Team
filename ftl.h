@@ -30,10 +30,8 @@ class Ftl:public Nand
 		} s;
 		map<int, list<int> :: iterator> lru0;
 		list<int> check0;
-		int lrusize0;
 		map<int, list<int> :: iterator> lru1;
 		list<int> check1;
-		int lrusize1;
 
 	public:
 		Ftl();

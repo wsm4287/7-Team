@@ -263,8 +263,6 @@ void Ftl::Sim_Init(){
 	s.gc = 0;
 	s.host_write = 0;
 	s.gc_write = 0;
-	lrusize0 = BLKS_PER_BANK;
-	lrusize1 = BLKS_PER_BANK;
 	srand(time(NULL));
 }
 
@@ -320,17 +318,8 @@ int Ftl::Check_Sp(){
 void Ftl::Input_Lru(int bank, int blk){
 	if(!bank){
 		if(lru0.find(blk) == lru0.end()){
-			if(check0.size() == lrusize0){
-				int removed = check0.back();
-				lru0.erase(removed);
-				check0.pop_back();
 				check0.push_front(blk);
 				lru0[blk] = check0.begin();
-			}
-			else{
-				check0.push_front(blk);
-				lru0[blk] = check0.begin();
-			}
 		}
 		else{
 			check0.remove(blk);
@@ -340,17 +329,8 @@ void Ftl::Input_Lru(int bank, int blk){
 	}
 	else{
 		if(lru1.find(blk) == lru1.end()){
-			if(check1.size() == lrusize1){
-				int removed = check1.back();
-				lru1.erase(removed);
-				check1.pop_back();
 				check1.push_front(blk);
 				lru1[blk] = check1.begin();
-			}
-			else{
-				check1.push_front(blk);
-				lru1[blk] = check1.begin();
-			}
 		}
 
 		else{
